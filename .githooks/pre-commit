@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# P3 Portal pre-commit hook: enforce SPDX headers in Plus source files.
+#
+# Activation (run once per clone):
+#   git config core.hooksPath .githooks
+#
+# The hook runs `python tools/inject_license_headers.py --check`.
+# It only inspects staged files in backend/plus/ and frontend/src/plus/.
+# If any qualifying file is missing its SPDX header, the commit is blocked
+# with an informative error message.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Only check files that are staged (new or modified) in the Plus dirs
+STAGED_PLUS=$(git diff --cached --name-only --diff-filter=ACM | \
+    grep -E '^(backend/plus|frontend/src/plus)/' | \
+    grep -E '\.(py|js|jsx|ts|tsx|css)$' || true)
+
+if [ -z "$STAGED_PLUS" ]; then
+    # No qualifying Plus files staged – nothing to check
+    exit 0
+fi
+
+# Run the header check
+if ! python "$REPO_ROOT/tools/inject_license_headers.py" --check; then
+    echo ""
+    echo "Pre-commit hook blocked the commit."
+    echo "Run: python tools/inject_license_headers.py"
+    echo "Then re-stage the updated files and commit again."
+    exit 1
+fi

@@ -1,0 +1,133 @@
+# p3portal.org
+# Plus-Image Build Pipeline
+#
+# Clones the public Core repo at the tag pinned in `.core-version`,
+# overlays the Plus paths from this repo on top, then runs the standard
+# Docker build with EDITION=plus.
+#
+# Resulting image: ghcr.io/p3portal-org/p3portal-plus:{latest, <core-tag>}
+
+name: Build Plus Image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CORE_REPO: P3Portal-org/p3portal
+  PLUS_IMAGE: ghcr.io/p3portal-org/p3portal-plus
+
+jobs:
+  build-plus:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Plus repo
+        uses: actions/checkout@v4
+        with:
+          path: plus
+
+      - name: Read pinned Core version
+        id: core_version
+        run: |
+          if [ ! -f plus/.core-version ]; then
+            echo "::error::.core-version file missing in Plus repo"
+            exit 1
+          fi
+          CORE_VERSION=$(tr -d '[:space:]' < plus/.core-version)
+          if [ -z "$CORE_VERSION" ]; then
+            echo "::error::.core-version is empty"
+            exit 1
+          fi
+          echo "version=${CORE_VERSION}" >> $GITHUB_OUTPUT
+          echo "Pinned Core version: ${CORE_VERSION}"
+
+      - name: Clone Core at pinned tag
+        run: |
+          git clone --depth 1 --branch "${{ steps.core_version.outputs.version }}" \
+            "https://github.com/${{ env.CORE_REPO }}.git" core
+          ACTUAL_TAG=$(cd core && git describe --tags --exact-match HEAD 2>/dev/null || echo "no-tag")
+          echo "Core cloned at tag: ${ACTUAL_TAG}"
+
+      - name: Overlay Plus paths onto Core worktree
+        run: |
+          set -ex
+
+          # Backend Plus module — full replacement
+          rm -rf core/backend/plus
+          cp -a plus/backend/plus core/backend/plus
+
+          # Frontend Plus module — full replacement
+          rm -rf core/frontend/src/plus
+          cp -a plus/frontend/src/plus core/frontend/src/plus
+
+          # Plus license tooling
+          # NB: tools/ is NOT in the Core sync whitelist, so core/tools/ may
+          # not exist after the Core clone — mkdir -p is mandatory.
+          mkdir -p core/tools
+          if [ -f plus/tools/inject_license_headers.py ]; then
+            cp plus/tools/inject_license_headers.py core/tools/
+          fi
+          if [ -f plus/tools/license_config.py ]; then
+            cp plus/tools/license_config.py core/tools/
+          fi
+
+          # LICENSE-PLUS at repo root
+          if [ -f plus/LICENSE-PLUS ]; then
+            cp plus/LICENSE-PLUS core/LICENSE-PLUS
+          fi
+
+          # License-header pre-commit hook
+          # NB: .githooks/ is NOT in the Core sync whitelist either.
+          if [ -d plus/.githooks ]; then
+            mkdir -p core/.githooks
+            cp -a plus/.githooks/. core/.githooks/
+          fi
+
+          echo "Overlay complete. Plus paths in core/:"
+          ls -la core/backend/plus | head -5
+          ls -la core/frontend/src/plus | head -5
+          ls -la core/tools | head -5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Plus image
+        uses: docker/build-push-action@v5
+        with:
+          context: core
+          file: core/Dockerfile
+          build-args: |
+            EDITION=plus
+          push: true
+          tags: |
+            ${{ env.PLUS_IMAGE }}:latest
+            ${{ env.PLUS_IMAGE }}:${{ steps.core_version.outputs.version }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/P3Portal-org/p3portal-plus
+            org.opencontainers.image.title=P3 Portal Plus
+            org.opencontainers.image.description=P3 Portal Plus Edition (Core + Plus merged at build time)
+            org.opencontainers.image.version=${{ steps.core_version.outputs.version }}
+            p3portal.core_version=${{ steps.core_version.outputs.version }}
+
+      - name: Summary
+        run: |
+          {
+            echo "## Plus Image Build Summary"
+            echo ""
+            echo "- Core pinned: \`${{ steps.core_version.outputs.version }}\`"
+            echo "- Image: \`${{ env.PLUS_IMAGE }}:latest\`"
+            echo "- Image: \`${{ env.PLUS_IMAGE }}:${{ steps.core_version.outputs.version }}\`"
+            echo "- Provenance label: \`p3portal.core_version=${{ steps.core_version.outputs.version }}\`"
+          } >> $GITHUB_STEP_SUMMARY

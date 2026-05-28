@@ -1,0 +1,50 @@
+# Plus-Repo .gitignore
+# Note: this repo is a rolling snapshot from the maintainer's my-code/ working
+# copy via tools/sync.sh. Files matching the patterns below would never make it
+# through the sync, but the .gitignore is here as a second-line defence in case
+# someone clones the repo locally and accidentally creates dev artifacts.
+
+# Secrets & Credentials
+.env
+.env.*
+!.env.example
+*.lic
+*.key
+*.pem
+*.crt
+
+# License-tooling internal state (PROJ-61)
+tools/.env.license
+tools/.license_counter
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+
+# Node.js (for frontend/src/plus development)
+node_modules/
+.npm
+.eslintcache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Test artefacts
+test-results/
+playwright-report/
+coverage/
+
+# Logs / transient
+*.log
+data/
+ssl/

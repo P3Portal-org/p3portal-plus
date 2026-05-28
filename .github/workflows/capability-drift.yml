@@ -1,0 +1,110 @@
+# p3portal.org
+# Capability-Schema Drift Test
+#
+# Verifies that the Plus implementations registered in `backend.plus.*` cover
+# exactly the capability keys defined in `backend.core.plus_protocol.CAPABILITY_KEYS`.
+#
+# Hard-fails on drift to block builds where Plus is out of sync with Core
+# (e.g. Core added a new capability key that Plus hasn't implemented yet).
+#
+# Phase A version: minimal sanity check (importability + key-set comparison).
+# Phase B will harden this into the full strict-equality test per spec AC-CAPS-1.
+
+name: Capability Drift Test
+
+on:
+  pull_request:
+    paths:
+      - '.core-version'
+      - 'backend/plus/**'
+      - 'frontend/src/plus/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CORE_REPO: P3Portal-org/p3portal
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Plus repo
+        uses: actions/checkout@v4
+        with:
+          path: plus
+
+      - name: Read pinned Core version
+        id: core_version
+        run: |
+          CORE_VERSION=$(tr -d '[:space:]' < plus/.core-version)
+          echo "version=${CORE_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Clone Core at pinned tag
+        run: |
+          git clone --depth 1 --branch "${{ steps.core_version.outputs.version }}" \
+            "https://github.com/${{ env.CORE_REPO }}.git" core
+
+      - name: Overlay Plus backend onto Core worktree
+        run: |
+          rm -rf core/backend/plus
+          cp -a plus/backend/plus core/backend/plus
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install minimal deps for import check
+        working-directory: core
+        run: |
+          python -m pip install --upgrade pip
+          # Install only what's needed for the capability-import path.
+          # Full requirements.txt is heavy and not needed for drift check.
+          pip install pydantic fastapi sqlalchemy aiosqlite
+
+      - name: Strict-equality check (Phase A — basic)
+        working-directory: core
+        run: |
+          python - <<'PY'
+          import sys
+
+          try:
+              from backend.core.plus_protocol import CAPABILITY_KEYS
+          except Exception as exc:
+              print(f"::error::Failed to import CAPABILITY_KEYS from Core: {exc}")
+              sys.exit(1)
+
+          try:
+              import backend.plus  # triggers PlusActiveBehavior registration
+              from backend.core.plus_protocol import get_capabilities
+              plus_caps = set(get_capabilities().keys())
+          except Exception as exc:
+              print(f"::error::Failed to load Plus capabilities: {exc}")
+              sys.exit(1)
+
+          core_keys = set(CAPABILITY_KEYS)
+          missing_in_plus = core_keys - plus_caps
+          extra_in_plus = plus_caps - core_keys
+
+          if missing_in_plus:
+              print(f"::error::Plus is missing capabilities defined in Core: {sorted(missing_in_plus)}")
+          if extra_in_plus:
+              print(f"::warning::Plus exposes capabilities not defined in Core (may be ok during transitions): {sorted(extra_in_plus)}")
+
+          if missing_in_plus:
+              sys.exit(1)
+
+          print(f"OK — {len(core_keys)} capabilities aligned between Core and Plus.")
+          PY
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Capability Drift Test"
+            echo ""
+            echo "- Core pinned: \`${{ steps.core_version.outputs.version }}\`"
+            echo "- Status: ${{ job.status }}"
+          } >> $GITHUB_STEP_SUMMARY

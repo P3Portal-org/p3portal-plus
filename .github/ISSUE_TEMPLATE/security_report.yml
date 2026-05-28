@@ -1,0 +1,106 @@
+name: Security report
+description: Report a security vulnerability in P3 Portal Plus.
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Security report
+
+        Use this template for security vulnerabilities that affect the
+        Plus Edition (`backend/plus/`, `frontend/src/plus/`, the build
+        pipeline, or the runtime behaviour of the Plus image).
+
+        For security issues that affect the **AGPLv3 Core**, use the
+        Core repository's security policy instead:
+        https://github.com/P3Portal-org/p3portal/security/policy
+
+        **Fallback:** if you cannot or do not want to use this public
+        template, you may e-mail the maintainer at
+        `license@p3portal.org`.
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚠ Do NOT paste any source code or exploit code
+
+        This repository is licensed under LICENSE-PLUS. Pasting source
+        code — your own snippets, suggested patches, full exploit
+        payloads, or diffs against the Plus source — creates a
+        contribution-licensing ambiguity and is not accepted in this
+        issue.
+
+        Describe the vulnerability and reproducer in prose only. File
+        paths, function names, and line numbers are fine.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Vulnerability summary
+      description: One- or two-sentence description of the issue.
+      placeholder: |
+        Example: "The setup wizard's /api/setup/test-node endpoint
+        accepts a user-controlled hostname and connects to it without
+        validation, allowing SSRF against LAN-internal addresses."
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: |
+        What can an attacker achieve? Confidentiality / integrity /
+        availability impact in prose.
+      placeholder: |
+        Example: "An unauthenticated remote attacker can probe
+        LAN-internal HTTP services from the perspective of the portal
+        container."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Reproducer (prose only)
+      description: |
+        Steps that reliably demonstrate the vulnerability. No exploit
+        code; describe the request shape in words.
+      placeholder: |
+        1. Send a POST to /api/setup/test-node with hostname=...
+        2. Observe that the server attempts to connect to ...
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Plus image tag
+      description: The Plus image tag under test.
+      placeholder: "ghcr.io/p3portal-org/p3portal-plus:v1.75.1-beta"
+    validations:
+      required: true
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: Root cause (optional, prose only)
+      description: |
+        If you've identified the affected code path, reference file
+        path, function name, and line numbers. Do NOT paste the source.
+      placeholder: |
+        Example: "backend/routers/setup.py, function `test_node()`,
+        around line 47 — passes the user-supplied URL to
+        `httpx.AsyncClient` without validation."
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested mitigation (optional, prose only)
+      description: |
+        Describe the approach in prose. Do NOT include implementation
+        code or patches.
+      placeholder: |
+        Example: "Reject non-routable hostnames at the validator
+        level before issuing the outbound request."
