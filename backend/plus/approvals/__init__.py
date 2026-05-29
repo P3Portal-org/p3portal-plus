@@ -114,25 +114,21 @@ def _run_migration(engine) -> None:
 
 
 def _table_exists(conn, text, table_name: str) -> bool:
-    # SQLite: sqlite_master (kein UNION ALL – verhindert Connection-State-Korruption in engine.begin())
+    # PROJ-71: Dialect-first — no cross-dialect try/except that poisons PG transactions
     try:
-        row = conn.execute(
-            text("SELECT name FROM sqlite_master WHERE type='table' AND name=:n"),
-            {"n": table_name},
-        ).fetchone()
-        if row is not None:
-            return True
-    except Exception:
-        pass
-    # PostgreSQL: information_schema (separater Fallback, nicht per UNION ALL)
-    try:
-        row = conn.execute(
-            text(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema='public' AND table_name=:n"
-            ),
-            {"n": table_name},
-        ).fetchone()
+        if conn.dialect.name == "sqlite":
+            row = conn.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table' AND name=:n"),
+                {"n": table_name},
+            ).fetchone()
+        else:
+            row = conn.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema='public' AND table_name=:n"
+                ),
+                {"n": table_name},
+            ).fetchone()
         return row is not None
     except Exception:
         return False
@@ -140,23 +136,20 @@ def _table_exists(conn, text, table_name: str) -> bool:
 
 def _column_exists(conn, text, table_name: str, column_name: str) -> bool:
     """Prüft ob eine Spalte in einer Tabelle existiert (SQLite + PostgreSQL)."""
+    # PROJ-71: Dialect-first — kein PRAGMA auf PostgreSQL (poisoned transaction)
     try:
-        # SQLite
-        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
-        if rows:
-            return any(r[1] == column_name for r in rows)
-    except Exception:
-        pass
-    try:
-        # PostgreSQL
-        row = conn.execute(
-            text(
-                "SELECT column_name FROM information_schema.columns "
-                "WHERE table_name=:t AND column_name=:c"
-            ),
-            {"t": table_name, "c": column_name},
-        ).fetchone()
-        return row is not None
+        if conn.dialect.name == "sqlite":
+            rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+            return bool(rows) and any(r[1] == column_name for r in rows)
+        else:
+            row = conn.execute(
+                text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema='public' AND table_name=:t AND column_name=:c"
+                ),
+                {"t": table_name, "c": column_name},
+            ).fetchone()
+            return row is not None
     except Exception:
         return False
 
@@ -218,12 +211,14 @@ def _migrate_portal_config_keys(conn, text) -> None:
         exp_hours = 48
     self_approval = str(self_appr_raw).lower() in ("1", "true", "yes")
 
+    # PROJ-71: ON CONFLICT DO NOTHING statt INSERT OR IGNORE (dialect-portabel)
     conn.execute(
         text("""
-            INSERT OR IGNORE INTO approval_workflow_config
+            INSERT INTO approval_workflow_config
                 (id, enabled, default_approver_group_id, default_expiration_hours,
                  allow_self_approval_global, updated_at, updated_by_user_id)
             VALUES (1, :enabled, :gid, :exp, :self_appr, :now, NULL)
+            ON CONFLICT DO NOTHING
         """),
         {
             "enabled":    1 if enabled else 0,
@@ -256,14 +251,16 @@ def _migrate_scheduled_job_approval_status(conn, text) -> None:
         return
 
     # Nicht-NULL-Werte in Plus-Tabelle migrieren
+    # PROJ-71: ON CONFLICT DO NOTHING statt INSERT OR IGNORE (dialect-portabel)
     conn.execute(
         text("""
-            INSERT OR IGNORE INTO scheduled_job_approval_status
+            INSERT INTO scheduled_job_approval_status
                 (scheduled_job_id, status, reason, updated_at)
             SELECT id, approval_status, NULL, :now
               FROM scheduled_jobs
              WHERE approval_status IS NOT NULL
                AND approval_status IN ('pending_approval', 'suspended')
+            ON CONFLICT DO NOTHING
         """),
         {"now": now},
     )

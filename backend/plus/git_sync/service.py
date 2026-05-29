@@ -231,17 +231,19 @@ async def _sync_scheduled_job(repo_type: str, interval: int, actor: str) -> None
     interval = 0  → SJ deaktivieren (falls vorhanden).
     interval > 0  → SJ anlegen oder Cron-Expression aktualisieren.
     """
-    from backend.db.database import get_db
+    from backend.db.database import get_db, get_engine_dialect
+    from backend.db.dialect import json_path_extract
     from backend.plus.scheduled_jobs import service as sjs
     from sqlalchemy import text
 
+    _dialect = get_engine_dialect()
     async with get_db() as db:
         row = (await db.execute(
             text(
                 "SELECT id, cron_expression, active "
                 "FROM scheduled_jobs "
-                "WHERE job_type = 'git_sync' "
-                "AND json_extract(config, '$.repo_type') = :rt"
+                f"WHERE job_type = 'git_sync' "
+                f"AND {json_path_extract('config', 'repo_type', _dialect)} = :rt"
             ),
             {"rt": repo_type},
         )).mappings().first()

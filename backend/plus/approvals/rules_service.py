@@ -16,7 +16,8 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
-from backend.db.database import get_db
+from backend.db.database import get_db, get_engine_dialect
+from backend.db.dialect import json_path_extract
 from backend.core.plus_protocol import plus_behavior
 from backend.services.audit_service import write_audit_log
 
@@ -406,20 +407,22 @@ async def _suspend_pending_for_rule(
                 {"now": now, "at": action_type, "tgt": action_target},
             )
 
-        # Aktive Schedules dieser Aktion in Plus-Tabelle suspendieren
+        # PROJ-71: ON CONFLICT DO NOTHING + json_path_extract helper (dialect-portabel)
+        _dialect = get_engine_dialect()
         await db.execute(
-            text("""
-                INSERT OR IGNORE INTO scheduled_job_approval_status
+            text(f"""
+                INSERT INTO scheduled_job_approval_status
                     (scheduled_job_id, status, reason, updated_at)
                 SELECT sj.id, 'suspended', 'rule_changed', :now
                   FROM scheduled_jobs sj
                  WHERE sj.active = 1
-                   AND json_extract(sj.config, '$.action_type') = :at
-                   AND json_extract(sj.config, '$.action_target') = :tgt
+                   AND {json_path_extract('sj.config', 'action_type', _dialect)} = :at
+                   AND {json_path_extract('sj.config', 'action_target', _dialect)} = :tgt
                    AND NOT EXISTS (
                        SELECT 1 FROM scheduled_job_approval_status
                         WHERE scheduled_job_id = sj.id
                    )
+                ON CONFLICT DO NOTHING
             """),
             {"at": action_type, "tgt": action_target, "now": now},
         )

@@ -45,12 +45,21 @@ def ensure_plus_db_tables(engine) -> None:
         logger.error("PROJ-70: DDL create_all fehlgeschlagen: %s", exc)
         return
 
-    # Idempotenz-Log: Tabellen-Existenz bestätigen
+    # PROJ-71: Idempotenz-Log via information_schema (SQLite + PostgreSQL kompatibel)
     try:
         with engine.connect() as conn:
-            row = conn.execute(
-                text("SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_jobs'")
-            ).fetchone()
+            dialect_name = conn.dialect.name
+            if dialect_name == "sqlite":
+                row = conn.execute(
+                    text("SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_jobs'")
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    text(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema='public' AND table_name='scheduled_jobs'"
+                    )
+                ).fetchone()
             if row:
                 logger.debug("PROJ-70: scheduled_jobs-Tabelle vorhanden ✓")
             else:

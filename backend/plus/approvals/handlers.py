@@ -203,16 +203,46 @@ async def _handle_owner_adopt_request(
     return None
 
 
+# ── config_snapshot_restore ──────────────────────────────────────────────────
+
+async def _handle_config_snapshot_restore(
+    approval: dict,
+    full_payload: dict,
+    actor_username: str,
+) -> str | None:
+    """Führt einen Config-Snapshot-Restore nach Freigabe durch (PROJ-74)."""
+    from backend.plus.config_snapshots.service import restore_snapshot
+
+    snapshot_id = full_payload.get("snapshot_id", "")
+    etag = full_payload.get("etag", "")
+    vm_name_confirm = full_payload.get("vm_name_confirm", "")
+    create_pre = full_payload.get("create_pre_restore_snapshot", True)
+    restart = full_payload.get("restart_after_restore", False)
+    requester_user_id: int | None = approval.get("requester_user_id")
+
+    await restore_snapshot(
+        snapshot_id=snapshot_id,
+        etag=etag,
+        vm_name_confirm=vm_name_confirm,
+        create_pre_restore_snapshot=bool(create_pre),
+        restart_after_restore=bool(restart),
+        username=actor_username,
+        user_id=requester_user_id,
+    )
+    return None
+
+
 # ── Registry ─────────────────────────────────────────────────────────────────
 
 HANDLER_REGISTRY: dict[str, HandlerFn] = {
-    "playbook_run":           _handle_playbook_run,
-    "packer_build":           _handle_packer_build,
-    "vm_delete":              _handle_vm_delete,
-    "lxc_delete":             _handle_lxc_delete,
-    "template_delete":        _handle_template_delete,
-    "owner_delete_request":   _handle_owner_delete_request,
-    "owner_adopt_request":    _handle_owner_adopt_request,
+    "playbook_run":              _handle_playbook_run,
+    "packer_build":              _handle_packer_build,
+    "vm_delete":                 _handle_vm_delete,
+    "lxc_delete":                _handle_lxc_delete,
+    "template_delete":           _handle_template_delete,
+    "owner_delete_request":      _handle_owner_delete_request,
+    "owner_adopt_request":       _handle_owner_adopt_request,
+    "config_snapshot_restore":   _handle_config_snapshot_restore,
 }
 
 

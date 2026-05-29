@@ -108,6 +108,12 @@ try:
 except ImportError:
     logger.warning("scheduled_jobs_plus nicht verfügbar – Core-Defaults aktiv")
 
+try:
+    from backend.plus.config_snapshots_plus import ConfigSnapshotsPlusBehavior
+    _mixins.append(ConfigSnapshotsPlusBehavior)
+except ImportError:
+    logger.warning("config_snapshots_plus nicht verfügbar – Core-Defaults aktiv")
+
 
 # ── Plus-Capability-Gate-Hooks ohne dediziertes Mixin ───────────────────────
 
@@ -151,7 +157,12 @@ class _PlusGateBehavior:
         return True
 
     def get_extra_portal_permissions(self) -> list[str]:
-        return ["manage_pools", "manage_playbook_permissions", "approve_jobs"]
+        return [
+            "manage_pools",
+            "manage_playbook_permissions",
+            "approve_jobs",
+            "manage_config_snapshots_orphans",
+        ]
 
     def can_use_node_assignments(self) -> bool:
         return True
@@ -219,6 +230,14 @@ class _PlusGateBehavior:
             logger.debug("PROJ-68: git_sync-Tabellen sichergestellt")
         except Exception as _e:
             logger.warning("PROJ-68: git_sync ensure_plus_db_tables fehlgeschlagen: %s", _e)
+
+        # PROJ-74: Config-Snapshot-Tabellen
+        try:
+            from backend.plus.config_snapshots.models import plus_metadata as _cs_meta
+            _cs_meta.create_all(_engine, checkfirst=True)
+            logger.debug("PROJ-74: vm_config_snapshots-Tabelle sichergestellt")
+        except Exception as _e:
+            logger.warning("PROJ-74: config_snapshots create_all fehlgeschlagen: %s", _e)
 
 
 # ── PlusActiveBehavior: dynamisch aus verfügbaren Mixins komponiert ─────────

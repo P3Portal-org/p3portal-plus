@@ -108,6 +108,13 @@ export const PlusComponents = {
   // PROJ-68: Git-Sync für Playbooks & Packer-Templates (Plus-only).
   // GitSyncSection: Admin-Sektion in System Settings > Vorlagen.
   GitSyncSection: lazy(() => import('./GitSync/GitSyncSection')),
+  // PROJ-74: VM/LXC Config-Snapshots (Plus-only).
+  // ConfigSnapshotsTab: VM/LXC-Detail-Tab (PROJ-29-Tab-Integration).
+  // ConfigSnapshotsNodeTab: Node-Übersichts-Tab in PROJ-40 ComputeNodesPage.
+  // ConfigSnapshotOrphanPage: Admin-Seite für verwaiste Snapshots (System Settings).
+  ConfigSnapshotsTab: lazy(() => import('./ConfigSnapshots/ConfigSnapshotsTab')),
+  ConfigSnapshotsNodeTab: lazy(() => import('./ConfigSnapshots/ConfigSnapshotsNodeTab')),
+  ConfigSnapshotOrphanPage: lazy(() => import('./ConfigSnapshots/ConfigSnapshotOrphanPage')),
 }
 
 // PROJ-68: Conflict-Badge Hook – non-lazy export (Hook, keine Komponente).

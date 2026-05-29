@@ -24,7 +24,8 @@ from datetime import datetime, timezone
 
 from sqlalchemy import text
 
-from backend.db.database import get_db
+from backend.db.database import get_db, get_engine_dialect
+from backend.db.dialect import json_path_extract
 from backend.services.audit_service import write_audit_log
 
 logger = logging.getLogger(__name__)
@@ -277,14 +278,16 @@ async def on_vm_lxc_delete(
                       "owner_delete_request", "owner_adopt_request")
 
     async with get_db() as db:
+        # PROJ-71: json_path_extract helper (dialect-portabel für SQLite + PostgreSQL)
+        _dialect = get_engine_dialect()
         result = await db.execute(
-            text("""
+            text(f"""
                 SELECT id FROM pending_approvals
                  WHERE action_type IN ('vm_delete','lxc_delete','template_delete',
                                        'owner_delete_request','owner_adopt_request')
                    AND status IN ('pending', 'suspended')
-                   AND json_extract(payload, '$.node_id') = :nid
-                   AND json_extract(payload, '$.vmid') = :vmid
+                   AND {json_path_extract('payload', 'node_id', _dialect)} = :nid
+                   AND {json_path_extract('payload', 'vmid', _dialect)} = :vmid
             """),
             {"nid": node_id, "vmid": vmid},
         )

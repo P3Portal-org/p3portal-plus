@@ -137,6 +137,7 @@ async def create_job(
     if current_user.user_id is not None and body.job_type in ("playbook", "packer"):
         try:
             from backend.db.database import get_db
+            from backend.db.dialect import upsert_or_ignore as _upsert_or_ignore
             from sqlalchemy import text as _text
             from datetime import datetime as _dt, timezone as _tz
 
@@ -159,11 +160,13 @@ async def create_job(
                     # Job auf pending_approval in Plus-Tabelle setzen
                     now = _dt.now(_tz.utc).isoformat()
                     async with get_db() as db:
+                        # PROJ-71: ON CONFLICT DO NOTHING statt INSERT OR IGNORE (dialect-portabel)
                         await db.execute(
                             _text("""
-                                INSERT OR IGNORE INTO scheduled_job_approval_status
+                                INSERT INTO scheduled_job_approval_status
                                     (scheduled_job_id, status, reason, updated_at)
                                 VALUES (:id, 'pending_approval', 'created_pending', :now)
+                                ON CONFLICT DO NOTHING
                             """),
                             {"id": parent["id"], "now": now},
                         )

@@ -98,11 +98,13 @@ def _migrate_default_mode(engine) -> None:
             mode_value = row[0] if row else "open"
 
             now = datetime.now(timezone.utc).isoformat()
+            # PROJ-71: ON CONFLICT DO NOTHING statt INSERT OR IGNORE (dialect-portabel)
             conn.execute(
                 text(
-                    "INSERT OR IGNORE INTO playbook_permissions_config "
+                    "INSERT INTO playbook_permissions_config "
                     "(id, default_mode, updated_at, updated_by_user_id) "
-                    "VALUES (1, :mode, :now, NULL)"
+                    "VALUES (1, :mode, :now, NULL) "
+                    "ON CONFLICT DO NOTHING"
                 ),
                 {"mode": mode_value, "now": now},
             )

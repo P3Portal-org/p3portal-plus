@@ -162,6 +162,22 @@ describe('PlusComponents Registry (PROJ-43)', () => {
     expect(PlusComponents.GitSyncSection.$$typeof).toBeDefined()
   })
 
+  // PROJ-74: Config-Snapshots
+  it('registers ConfigSnapshotsTab as a lazy component (PROJ-74)', () => {
+    expect(PlusComponents.ConfigSnapshotsTab).toBeTypeOf('object')
+    expect(PlusComponents.ConfigSnapshotsTab.$$typeof).toBeDefined()
+  })
+
+  it('registers ConfigSnapshotsNodeTab as a lazy component (PROJ-74)', () => {
+    expect(PlusComponents.ConfigSnapshotsNodeTab).toBeTypeOf('object')
+    expect(PlusComponents.ConfigSnapshotsNodeTab.$$typeof).toBeDefined()
+  })
+
+  it('registers ConfigSnapshotOrphanPage as a lazy component (PROJ-74)', () => {
+    expect(PlusComponents.ConfigSnapshotOrphanPage).toBeTypeOf('object')
+    expect(PlusComponents.ConfigSnapshotOrphanPage.$$typeof).toBeDefined()
+  })
+
   it('exposes only the migrated Plus components', () => {
     expect(Object.keys(PlusComponents).sort()).toEqual([
       'AddNodeCard',
@@ -174,6 +190,9 @@ describe('PlusComponents Registry (PROJ-43)', () => {
       'ApprovalsPage',
       'ComputeAlertingTab',
       'ComputeScheduledJobsTab',
+      'ConfigSnapshotOrphanPage',
+      'ConfigSnapshotsNodeTab',
+      'ConfigSnapshotsTab',
       'GitSyncSection',
       'LanguagesAdminActions',
       'MasterToggleSection',

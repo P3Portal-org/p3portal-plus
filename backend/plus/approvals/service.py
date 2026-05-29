@@ -27,7 +27,8 @@ from typing import Any
 
 from sqlalchemy import text
 
-from backend.db.database import get_db
+from backend.db.database import get_db, get_engine_dialect
+from backend.db.dialect import json_path_extract
 from backend.plus.approvals import secret_masking
 from backend.plus.approvals.rules_service import (
     get_allow_self_approval_global,
@@ -480,9 +481,11 @@ async def enable_workflow(actor_user_id: int, actor_username: str) -> dict:
 
     # Schedules mit approval-pflichtigen Aktionen in Plus-Tabelle suspendieren
     async with get_db() as db:
+        # PROJ-71: ON CONFLICT DO NOTHING + json_path_extract helper (dialect-portabel)
+        _dialect = get_engine_dialect()
         result = await db.execute(
-            text("""
-                INSERT OR IGNORE INTO scheduled_job_approval_status
+            text(f"""
+                INSERT INTO scheduled_job_approval_status
                     (scheduled_job_id, status, reason, updated_at)
                 SELECT sj.id, 'suspended', 'workflow_enabled', :now
                   FROM scheduled_jobs sj
@@ -495,10 +498,11 @@ async def enable_workflow(actor_user_id: int, actor_username: str) -> dict:
                        SELECT 1 FROM approval_rules ar
                         WHERE ar.is_active=1 AND ar.required=1
                           AND (
-                              ar.action_type = json_extract(sj.config, '$.action_type')
+                              ar.action_type = {json_path_extract('sj.config', 'action_type', _dialect)}
                               OR ar.action_type = 'playbook_run'
                           )
                    )
+                ON CONFLICT DO NOTHING
             """),
             {"now": now},
         )
@@ -507,9 +511,10 @@ async def enable_workflow(actor_user_id: int, actor_username: str) -> dict:
         # Master-Toggle: Zeile id=1 anlegen falls noch nicht vorhanden, dann setzen
         await db.execute(
             text("""
-                INSERT OR IGNORE INTO approval_workflow_config
+                INSERT INTO approval_workflow_config
                     (id, enabled, default_expiration_hours, allow_self_approval_global)
                 VALUES (1, 0, 48, 0)
+                ON CONFLICT DO NOTHING
             """)
         )
         await db.execute(
@@ -570,12 +575,13 @@ async def disable_workflow(actor_user_id: int, actor_username: str) -> dict:
         )
         reactivated_count = result2.rowcount or 0
 
-        # Master-Toggle: Zeile id=1 anlegen falls noch nicht vorhanden, dann deaktivieren
+        # PROJ-71: ON CONFLICT DO NOTHING statt INSERT OR IGNORE (dialect-portabel)
         await db.execute(
             text("""
-                INSERT OR IGNORE INTO approval_workflow_config
+                INSERT INTO approval_workflow_config
                     (id, enabled, default_expiration_hours, allow_self_approval_global)
                 VALUES (1, 0, 48, 0)
+                ON CONFLICT DO NOTHING
             """)
         )
         await db.execute(
