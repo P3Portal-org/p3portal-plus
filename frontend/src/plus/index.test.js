@@ -178,6 +178,12 @@ describe('PlusComponents Registry (PROJ-43)', () => {
     expect(PlusComponents.ConfigSnapshotOrphanPage.$$typeof).toBeDefined()
   })
 
+  // PROJ-77: Auto-Snapshots
+  it('registers NativeSnapshotBadgeMap as a lazy component (PROJ-77)', () => {
+    expect(PlusComponents.NativeSnapshotBadgeMap).toBeTypeOf('object')
+    expect(PlusComponents.NativeSnapshotBadgeMap.$$typeof).toBeDefined()
+  })
+
   it('exposes only the migrated Plus components', () => {
     expect(Object.keys(PlusComponents).sort()).toEqual([
       'AddNodeCard',
@@ -197,6 +203,7 @@ describe('PlusComponents Registry (PROJ-43)', () => {
       'LanguagesAdminActions',
       'MasterToggleSection',
       'MyApprovalsTab',
+      'NativeSnapshotBadgeMap',
       'NodeDeleteButton',
       'NodeSetDefaultButton',
       'PlaybookPermissionsPage',

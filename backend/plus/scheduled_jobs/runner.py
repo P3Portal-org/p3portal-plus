@@ -105,7 +105,23 @@ async def _execute(job: dict, config: dict) -> tuple[str, int]:
     elif jtype == "git_sync":
         return await _run_git_sync(config)
     else:
-        return f"[error] Unbekannter Job-Typ: {jtype}", 1
+        # PROJ-77: Plus-Hook-Action-Handler (auto_config_snapshot, auto_vm_snapshot
+        # und künftige Erweiterungen). Hartcodierte 4 Branches oben bleiben für
+        # PROJ-49 Playbook-Permission-Check + Test-Stabilität.
+        try:
+            from backend.core.plus_protocol import plus_behavior
+            handlers = plus_behavior.get_scheduled_job_action_handlers() or {}
+            handler = handlers.get(jtype)
+        except Exception as exc:
+            logger.exception("Plus-Action-Handler-Lookup für %s fehlgeschlagen", jtype)
+            return f"[error] Plus-Handler-Lookup-Fehler: {exc}", 1
+        if handler is None:
+            return f"[error] Unbekannter Job-Typ: {jtype}", 1
+        try:
+            return await handler(job, config)
+        except Exception as exc:
+            logger.exception("Plus-Action-Handler %s für Job %s fehlgeschlagen", jtype, job.get("id"))
+            return f"[error] {jtype} fehlgeschlagen: {exc}", 1
 
 
 # ── SSH-Ausführung ────────────────────────────────────────────────────────────

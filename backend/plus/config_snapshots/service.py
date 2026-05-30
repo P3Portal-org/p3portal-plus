@@ -230,12 +230,14 @@ async def create_snapshot(
     username: str,
     source: str = "manual",
     payload_override: Optional[dict] = None,
+    created_by_scheduled_job_id: Optional[str] = None,
 ) -> SnapshotOut:
     """Fetch live config from Proxmox and persist as a new snapshot."""
     try:
         return await _create_snapshot_impl(
             portal_node_id, proxmox_node, vmid, kind, note, name,
             created_by_user_id, username, source, payload_override,
+            created_by_scheduled_job_id,
         )
     except HTTPException:
         raise
@@ -258,6 +260,7 @@ async def _create_snapshot_impl(
     username: str,
     source: str = "manual",
     payload_override: Optional[dict] = None,
+    created_by_scheduled_job_id: Optional[str] = None,
 ) -> SnapshotOut:
     node = await _get_node_or_404(portal_node_id)
     client, auth = _admin_auth(node)
@@ -289,9 +292,9 @@ async def _create_snapshot_impl(
                 "INSERT INTO vm_config_snapshots "
                 "(id, portal_node_id, proxmox_node, vmid, kind, name, note, "
                 " payload_json, description, source, created_at, created_by_user_id, "
-                " is_orphan, orphaned_at, vm_name_at_delete) "
+                " created_by_scheduled_job_id, is_orphan, orphaned_at, vm_name_at_delete) "
                 "VALUES (:id, :nid, :pn, :vmid, :kind, :name, :note, "
-                ":pj, :desc, :src, :ca, :uid, 0, NULL, NULL)"
+                ":pj, :desc, :src, :ca, :uid, :sjid, 0, NULL, NULL)"
             ),
             {
                 "id": snap_id,
@@ -306,6 +309,7 @@ async def _create_snapshot_impl(
                 "src": source,
                 "ca": now,
                 "uid": created_by_user_id,
+                "sjid": created_by_scheduled_job_id,
             },
         )
         await db.commit()

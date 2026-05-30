@@ -7,6 +7,7 @@
 
 // p3portal.org
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getPlaybooks } from '../../api/playbooks'
 import ModalHelpButton from '../../features/help/components/ModalHelpButton'
 import PlaybookFormField from '../../components/playbooks/PlaybookFormField'
@@ -14,12 +15,37 @@ import SshJobForm from './SshJobForm'
 import PowerActionJobForm from './PowerActionJobForm'
 import CronPicker, { parseCronToState } from './CronPicker'
 import { createScheduledJob, updateScheduledJob } from '../../api/scheduledJobs'
+// PROJ-77: Auto-Snapshot-Action-Types
+import { useCapability } from '../../hooks/useCapability'
+import TargetSelector from '../AutoSnapshots/TargetSelector'
+import AutoSnapshotFieldsConfig from '../AutoSnapshots/AutoSnapshotFieldsConfig'
+import AutoSnapshotFieldsVm from '../AutoSnapshots/AutoSnapshotFieldsVm'
 
 const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder-gray-400 dark:placeholder-zinc-500'
+
+function defaultAutoBase() {
+  return {
+    target_spec: {
+      singles: [],
+      pool_ids: [],
+      portal_node_ids: [],
+      tags: [],
+      kind_filter: 'both',
+    },
+    keep_last: 7,
+    gfs_enabled: false,
+    keep_daily: 0,
+    keep_weekly: 0,
+    keep_monthly: 0,
+    max_parallel: 5,
+  }
+}
 
 function defaultConfig(type) {
   if (type === 'ssh') return { user_host: '', command: '', ssh_key_source: 'system', timeout: 30 }
   if (type === 'power_action') return { node: '', vmid: '', vmtype: 'qemu', action: 'start' }
+  if (type === 'auto_config_snapshot') return { ...defaultAutoBase(), skip_if_no_changes: true }
+  if (type === 'auto_vm_snapshot') return { ...defaultAutoBase(), include_ram: false }
   return {}
 }
 
@@ -63,6 +89,8 @@ function PlaybookJobForm({ playbookName, values, onChange, onPlaybookChange, pla
 
 export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCount, maxJobs }) {
   const isEdit = !!job
+  const { t } = useTranslation()
+  const hasAutoSnapshots = useCapability('auto_snapshots')
 
   // Step: 1 = Typ, 2 = Typ-Formular, 3 = Zeitplan + Meta
   const [step, setStep] = useState(isEdit ? 2 : 1)
@@ -91,6 +119,14 @@ export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCo
   const [loadingPb, setLoadingPb] = useState(false)
   const [playbookName, setPlaybookName] = useState(job?.config?.playbook ?? '')
   const [pbParams, setPbParams] = useState(job?.config?.params ?? {})
+
+  // PROJ-77: Auto-Snapshot configs
+  const [autoConfigSnap, setAutoConfigSnap] = useState(
+    job?.job_type === 'auto_config_snapshot' ? (job.config ?? defaultConfig('auto_config_snapshot')) : defaultConfig('auto_config_snapshot')
+  )
+  const [autoVmSnap, setAutoVmSnap] = useState(
+    job?.job_type === 'auto_vm_snapshot' ? (job.config ?? defaultConfig('auto_vm_snapshot')) : defaultConfig('auto_vm_snapshot')
+  )
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -133,6 +169,8 @@ export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCo
     if (jobType === 'ssh') config = sshConfig
     if (jobType === 'power_action') config = powerConfig
     if (jobType === 'playbook') config = { playbook: playbookName, params: pbParams }
+    if (jobType === 'auto_config_snapshot') config = autoConfigSnap
+    if (jobType === 'auto_vm_snapshot') config = autoVmSnap
 
     const base = {
       name: name.trim(),
@@ -153,6 +191,20 @@ export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCo
     return base
   }
 
+  const validateAuto = (cfg) => {
+    const spec = cfg?.target_spec
+    if (!spec) return t('auto_snapshots.validation.no_target', 'Mindestens ein Ziel erforderlich.')
+    const hasAny = (spec.singles?.length ?? 0) > 0
+      || (spec.pool_ids?.length ?? 0) > 0
+      || (spec.portal_node_ids?.length ?? 0) > 0
+      || (spec.tags?.length ?? 0) > 0
+    if (!hasAny) return t('auto_snapshots.validation.no_target', 'Mindestens ein Ziel erforderlich.')
+    if (cfg.gfs_enabled && cfg.keep_daily === 0 && cfg.keep_weekly === 0 && cfg.keep_monthly === 0) {
+      return t('auto_snapshots.validation.gfs_requires_tier', 'Bei aktiviertem GFS muss mindestens ein keep_* > 0 sein.')
+    }
+    return null
+  }
+
   const validate = () => {
     if (!name.trim()) return 'Name ist erforderlich.'
     if (!cronValue.trim()) return 'Zeitplan ist erforderlich.'
@@ -167,6 +219,8 @@ export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCo
       if (windowMode && !windowStopCron?.trim()) return 'Stoppzeit ist erforderlich.'
     }
     if (jobType === 'playbook' && !playbookName) return 'Playbook ist erforderlich.'
+    if (jobType === 'auto_config_snapshot') return validateAuto(autoConfigSnap)
+    if (jobType === 'auto_vm_snapshot') return validateAuto(autoVmSnap)
     return null
   }
 
@@ -222,7 +276,51 @@ export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCo
         </svg>
       ),
     },
+    // PROJ-77: Auto-Snapshot-Karten nur sichtbar wenn Plus-Capability aktiv ist
+    ...(hasAutoSnapshots ? [
+      {
+        value: 'auto_config_snapshot',
+        title: t('auto_snapshots.action_type.config'),
+        desc: t('auto_snapshots.action_type.config_desc'),
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-6 h-6">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <path d="M9 13l2 2 4-4" />
+          </svg>
+        ),
+      },
+      {
+        value: 'auto_vm_snapshot',
+        title: t('auto_snapshots.action_type.vm'),
+        desc: t('auto_snapshots.action_type.vm_desc'),
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-6 h-6">
+            <rect x="3" y="4" width="18" height="12" rx="2" />
+            <line x1="8" y1="20" x2="16" y2="20" /><line x1="12" y1="16" x2="12" y2="20" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+        ),
+      },
+    ] : []),
   ]
+
+  // Label-Helper für Step-2-Badge (auto_* werden via i18n übersetzt)
+  const typeBadgeLabel = (() => {
+    if (jobType === 'playbook') return 'Ansible Playbook'
+    if (jobType === 'ssh') return 'SSH-Befehl'
+    if (jobType === 'power_action') return 'Power-Aktion'
+    if (jobType === 'auto_config_snapshot') return t('auto_snapshots.action_type.config')
+    if (jobType === 'auto_vm_snapshot') return t('auto_snapshots.action_type.vm')
+    return jobType
+  })()
+
+  const typeBadgeCls = (() => {
+    if (jobType === 'playbook') return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+    if (jobType === 'ssh') return 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+    if (jobType === 'power_action') return 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'
+    return 'bg-portal-info/10 text-portal-info'
+  })()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -293,12 +391,8 @@ export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCo
             <div className="space-y-4">
               {!isEdit && (
                 <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-zinc-500">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                    jobType === 'playbook' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' :
-                    jobType === 'ssh'      ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' :
-                    'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'
-                  }`}>
-                    {jobType === 'playbook' ? 'Ansible Playbook' : jobType === 'ssh' ? 'SSH-Befehl' : 'Power-Aktion'}
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${typeBadgeCls}`}>
+                    {typeBadgeLabel}
                   </span>
                   <button onClick={() => setStep(1)} className="hover:text-gray-600 dark:hover:text-zinc-200 underline">ändern</button>
                 </div>
@@ -328,6 +422,30 @@ export default function ScheduledJobFormModal({ job, onClose, onSaved, currentCo
                   windowStopCron={windowStopCron}
                   onWindowStopCronChange={setWindowStopCron}
                 />
+              )}
+              {jobType === 'auto_config_snapshot' && (
+                <>
+                  <TargetSelector
+                    value={autoConfigSnap.target_spec}
+                    onChange={(v) => setAutoConfigSnap({ ...autoConfigSnap, target_spec: v })}
+                  />
+                  <AutoSnapshotFieldsConfig
+                    values={autoConfigSnap}
+                    onChange={setAutoConfigSnap}
+                  />
+                </>
+              )}
+              {jobType === 'auto_vm_snapshot' && (
+                <>
+                  <TargetSelector
+                    value={autoVmSnap.target_spec}
+                    onChange={(v) => setAutoVmSnap({ ...autoVmSnap, target_spec: v })}
+                  />
+                  <AutoSnapshotFieldsVm
+                    values={autoVmSnap}
+                    onChange={setAutoVmSnap}
+                  />
+                </>
               )}
             </div>
           )}

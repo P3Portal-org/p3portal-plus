@@ -8,6 +8,8 @@
 // p3portal.org
 import { useState } from 'react'
 import { useScheduledJobRuns } from '../../hooks/useScheduledJobs'
+// PROJ-77: Per-VM-Detailtabelle für Auto-Snapshot-Runs
+import RunDetailsTable from '../AutoSnapshots/RunDetailsTable'
 
 const STATUS_COLOR = {
   running: 'text-orange-600 dark:text-orange-400',
@@ -35,10 +37,11 @@ function fmtDuration(started, finished) {
   return `${Math.round(ms / 60000)} min`
 }
 
-function RunEntry({ run }) {
+function RunEntry({ run, jobType }) {
   const [open, setOpen] = useState(false)
   const duration = fmtDuration(run.started_at, run.finished_at)
   const actionLabel = run.action ? ` (${run.action})` : ''
+  const isAuto = jobType === 'auto_config_snapshot' || jobType === 'auto_vm_snapshot'
 
   return (
     <div className="border border-gray-100 dark:border-zinc-800 rounded-lg overflow-hidden">
@@ -75,7 +78,9 @@ function RunEntry({ run }) {
 
       {open && (
         <div className="border-t border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 px-4 py-3">
-          {run.output ? (
+          {isAuto ? (
+            <RunDetailsTable runId={run.id} />
+          ) : run.output ? (
             <pre className="text-xs font-mono text-gray-700 dark:text-zinc-300 whitespace-pre-wrap break-words max-h-60 overflow-y-auto">
               {run.output}
             </pre>
@@ -88,7 +93,7 @@ function RunEntry({ run }) {
   )
 }
 
-export default function RunHistoryList({ jobId }) {
+export default function RunHistoryList({ jobId, jobType }) {
   const { runs, loading, error, reload } = useScheduledJobRuns(jobId)
 
   if (loading) {
@@ -110,7 +115,7 @@ export default function RunHistoryList({ jobId }) {
 
   return (
     <div className="space-y-2">
-      {runs.map(run => <RunEntry key={run.id} run={run} />)}
+      {runs.map(run => <RunEntry key={run.id} run={run} jobType={jobType} />)}
     </div>
   )
 }

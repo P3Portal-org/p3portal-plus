@@ -234,6 +234,60 @@ async def _handle_config_snapshot_restore(
 
 # ── Registry ─────────────────────────────────────────────────────────────────
 
+async def _handle_scheduled_job_create_auto_config_snapshot(
+    approval: dict,
+    full_payload: dict,
+    actor_username: str,
+) -> str | None:
+    """PROJ-77: Aktiviert einen pending Scheduled Job nach Approval (Config-Snapshot-Auto-Job).
+
+    Job wurde mit ``active=0`` und scheduled_job_approval_status='pending_approval'
+    angelegt. Approve setzt ``active=1`` + berechnet ``next_run_at``.
+    """
+    from datetime import datetime, timezone
+    from croniter import croniter
+
+    from backend.db.database import get_db
+    from sqlalchemy import text
+
+    sj_id = full_payload.get("sj_id") or approval.get("action_target", "")
+    if not sj_id:
+        return None
+    now = datetime.now(timezone.utc).isoformat()
+    async with get_db() as db:
+        row = await db.execute(
+            text("SELECT cron_expression FROM scheduled_jobs WHERE id = :id"),
+            {"id": sj_id},
+        )
+        rec = row.fetchone()
+        if not rec:
+            return None
+        try:
+            next_run = croniter(rec[0], datetime.now()).get_next(datetime).isoformat()
+        except Exception:
+            next_run = None
+        await db.execute(
+            text(
+                "UPDATE scheduled_jobs SET active = 1, next_run_at = :next, "
+                "updated_at = :now WHERE id = :id"
+            ),
+            {"next": next_run, "now": now, "id": sj_id},
+        )
+        await db.commit()
+    return sj_id
+
+
+async def _handle_scheduled_job_create_auto_vm_snapshot(
+    approval: dict,
+    full_payload: dict,
+    actor_username: str,
+) -> str | None:
+    """PROJ-77: Pendant zu _handle_scheduled_job_create_auto_config_snapshot."""
+    return await _handle_scheduled_job_create_auto_config_snapshot(
+        approval, full_payload, actor_username,
+    )
+
+
 HANDLER_REGISTRY: dict[str, HandlerFn] = {
     "playbook_run":              _handle_playbook_run,
     "packer_build":              _handle_packer_build,
@@ -243,6 +297,9 @@ HANDLER_REGISTRY: dict[str, HandlerFn] = {
     "owner_delete_request":      _handle_owner_delete_request,
     "owner_adopt_request":       _handle_owner_adopt_request,
     "config_snapshot_restore":   _handle_config_snapshot_restore,
+    # PROJ-77: optionale Approval-Integration (Default-aus, Admin muss Regel anlegen)
+    "scheduled_job_create_auto_config_snapshot": _handle_scheduled_job_create_auto_config_snapshot,
+    "scheduled_job_create_auto_vm_snapshot":     _handle_scheduled_job_create_auto_vm_snapshot,
 }
 
 

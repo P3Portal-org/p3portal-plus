@@ -10,9 +10,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+
+logger = logging.getLogger(__name__)
 
 from backend.core.deps import CurrentUser, get_current_user, require_admin
 from backend.core.plus_protocol import plus_behavior
@@ -122,6 +125,58 @@ async def create_job(
                 raise
             except Exception:
                 pass
+
+    # PROJ-77: Permission-Check für Auto-Snapshot-Jobs (Admin ODER Owner aller Targets)
+    if body.job_type in ("auto_config_snapshot", "auto_vm_snapshot"):
+        if not plus_behavior.can_use_auto_snapshots():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="not_found",
+            )
+        try:
+            from backend.plus.auto_snapshots.permissions import require_admin_or_all_targets_owned
+            from backend.plus.auto_snapshots.resolver import resolve_targets
+            from backend.plus.auto_snapshots.schemas import TargetSpec as _TS
+        except ImportError as exc:
+            logger.error("PROJ-77: auto_snapshots module unavailable: %s", exc)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="auto_snapshots_unavailable",
+            )
+        raw_spec = (body.config or {}).get("target_spec")
+        if not isinstance(raw_spec, dict):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="missing_target_spec",
+            )
+        try:
+            spec = _TS.model_validate(raw_spec)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"invalid_target_spec: {exc}",
+            )
+        try:
+            targets = await resolve_targets(spec)
+            allowed = await require_admin_or_all_targets_owned(
+                user_id=current_user.user_id,
+                user_role=current_user.role,
+                targets=targets,
+            )
+        except Exception as exc:
+            logger.error(
+                "PROJ-77: permission-check failed for user=%s job_type=%s: %s",
+                current_user.username, body.job_type, exc,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="permission_check_failed",
+            )
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="auto_snapshot_not_owner_of_all_targets",
+            )
 
     parent = await svc.create_job(
         name=body.name,

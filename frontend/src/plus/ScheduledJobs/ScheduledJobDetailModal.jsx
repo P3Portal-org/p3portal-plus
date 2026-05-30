@@ -9,9 +9,23 @@
 import RunHistoryList from './RunHistoryList'
 
 const TYPE_BADGE = {
-  playbook:     { label: 'Ansible Playbook', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' },
-  ssh:          { label: 'SSH-Befehl', cls: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' },
-  power_action: { label: 'Power-Aktion', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300' },
+  playbook:              { label: 'Ansible Playbook', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' },
+  ssh:                   { label: 'SSH-Befehl', cls: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' },
+  power_action:          { label: 'Power-Aktion', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300' },
+  auto_config_snapshot:  { label: 'Auto Config-Snapshot', cls: 'bg-portal-info/10 text-portal-info' },
+  auto_vm_snapshot:      { label: 'Auto VM/LXC-Snapshot', cls: 'bg-portal-info/10 text-portal-info' },
+}
+
+function formatTargetSpec(spec) {
+  if (!spec) return '–'
+  const parts = []
+  if (spec.singles?.length) parts.push(`${spec.singles.length} Einzel-VMs`)
+  if (spec.pool_ids?.length) parts.push(`${spec.pool_ids.length} Pools`)
+  if (spec.portal_node_ids?.length) parts.push(`${spec.portal_node_ids.length} Nodes`)
+  if (spec.tags?.length) parts.push(`Tags: ${spec.tags.join(', ')}`)
+  if (parts.length === 0) return '(leer)'
+  if (spec.kind_filter && spec.kind_filter !== 'both') parts.push(`Filter: ${spec.kind_filter}`)
+  return parts.join(' · ')
 }
 
 function fmtDate(iso) {
@@ -57,6 +71,24 @@ function JobConfig({ job }) {
       ))}
     </dl>
   )
+  if (job.job_type === 'auto_config_snapshot' || job.job_type === 'auto_vm_snapshot') {
+    return (
+      <dl>
+        <Row label="Ziele" value={formatTargetSpec(cfg.target_spec)} />
+        <Row label="keep_last" value={String(cfg.keep_last ?? 7)} />
+        {cfg.gfs_enabled && (
+          <Row label="GFS" value={`${cfg.keep_daily ?? 0} d / ${cfg.keep_weekly ?? 0} w / ${cfg.keep_monthly ?? 0} m`} />
+        )}
+        <Row label="max_parallel" value={String(cfg.max_parallel ?? 5)} />
+        {job.job_type === 'auto_config_snapshot' && (
+          <Row label="skip_if_no_changes" value={cfg.skip_if_no_changes ? 'ja' : 'nein'} />
+        )}
+        {job.job_type === 'auto_vm_snapshot' && (
+          <Row label="include_ram" value={cfg.include_ram ? 'ja' : 'nein'} />
+        )}
+      </dl>
+    )
+  }
   return null
 }
 
@@ -122,7 +154,7 @@ export default function ScheduledJobDetailModal({ job, onClose }) {
             <h3 className="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-3">
               Run-History
             </h3>
-            <RunHistoryList jobId={job.id} />
+            <RunHistoryList jobId={job.id} jobType={job.job_type} />
           </section>
         </div>
 

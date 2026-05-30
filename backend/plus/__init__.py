@@ -114,6 +114,12 @@ try:
 except ImportError:
     logger.warning("config_snapshots_plus nicht verfügbar – Core-Defaults aktiv")
 
+try:
+    from backend.plus.auto_snapshots_plus import AutoSnapshotsPlusBehavior
+    _mixins.append(AutoSnapshotsPlusBehavior)
+except ImportError:
+    logger.warning("auto_snapshots_plus nicht verfügbar – Core-Defaults aktiv")
+
 
 # ── Plus-Capability-Gate-Hooks ohne dediziertes Mixin ───────────────────────
 
@@ -169,6 +175,46 @@ class _PlusGateBehavior:
 
     def can_use_owners_unlimited(self) -> bool:
         return True
+
+    def can_use_auto_snapshots(self) -> bool:
+        # PROJ-77 ist Plus-only.
+        return True
+
+    # ── PROJ-77: Hook-Merge für get_scheduled_job_action_handlers ────────────
+    #
+    # PROJ-70 ScheduledJobsPlusBehavior liefert {ssh, playbook, power_action, git_sync}.
+    # PROJ-77 AutoSnapshotsPlusBehavior liefert {auto_config_snapshot, auto_vm_snapshot}.
+    # Da BEIDE Mixins die Methode definieren würde MRO normalerweise nur das erste
+    # Resultat liefern (Konflikt). Daher ruft _PlusGateBehavior alle Mixins explizit
+    # auf und mergt die Handler-Dicts (Tech-Design Sektion H.1).
+    def get_scheduled_job_action_handlers(self) -> dict:
+        merged: dict = {}
+        seen_classes: set = set()
+        for cls in type(self).__mro__:
+            if cls is _PlusGateBehavior:
+                continue
+            if cls in seen_classes:
+                continue
+            seen_classes.add(cls)
+            method = cls.__dict__.get("get_scheduled_job_action_handlers")
+            if method is None:
+                continue
+            try:
+                contrib = method(self) or {}
+            except Exception as exc:  # pragma: no cover
+                logger.warning(
+                    "PROJ-77 Hook-Merge: %s.get_scheduled_job_action_handlers fehlgeschlagen: %s",
+                    cls.__name__, exc,
+                )
+                continue
+            for key, handler in contrib.items():
+                if key in merged:
+                    logger.warning(
+                        "PROJ-77 Hook-Merge: action_type=%s doppelt registriert (%s gewinnt)",
+                        key, cls.__name__,
+                    )
+                merged[key] = handler
+        return merged
 
     def ensure_plus_db_tables(self) -> None:
         """Erstellt alle Plus-Tabellen idempotent (IF NOT EXISTS-Semantik).
@@ -238,6 +284,16 @@ class _PlusGateBehavior:
             logger.debug("PROJ-74: vm_config_snapshots-Tabelle sichergestellt")
         except Exception as _e:
             logger.warning("PROJ-74: config_snapshots create_all fehlgeschlagen: %s", _e)
+
+        # PROJ-77: vm_native_snapshots + PROJ-74-Erweiterung (source='auto',
+        # created_by_scheduled_job_id) + scheduled_jobs CHECK-Erweiterung.
+        # Reihenfolge: NACH PROJ-70 (FK scheduled_jobs.id) und NACH PROJ-74.
+        try:
+            from backend.plus.auto_snapshots import ensure_plus_db_tables as _auto_migrate
+            _auto_migrate(_engine)
+            logger.debug("PROJ-77: vm_native_snapshots + Erweiterungen sichergestellt")
+        except Exception as _e:
+            logger.warning("PROJ-77: auto_snapshots ensure_plus_db_tables fehlgeschlagen: %s", _e)
 
 
 # ── PlusActiveBehavior: dynamisch aus verfügbaren Mixins komponiert ─────────

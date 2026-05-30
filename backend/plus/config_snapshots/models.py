@@ -57,11 +57,14 @@ vm_config_snapshots = Table(
     Column("source", String(20), nullable=False, server_default="manual"),
     Column("created_at", String, nullable=False),
     Column("created_by_user_id", Integer),              # FK→local_users.id (nullable)
+    # PROJ-77: NULL für manuelle/upload Snaps, gesetzt für Auto-Snaps (FK String-Ref)
+    Column("created_by_scheduled_job_id", String),
     Column("is_orphan", Integer, nullable=False, server_default="0"),
     Column("orphaned_at", String),
     Column("vm_name_at_delete", String),
     CheckConstraint("kind IN ('qemu', 'lxc')", name="ck_snap_kind"),
-    CheckConstraint("source IN ('manual', 'pre_restore', 'upload')", name="ck_snap_source"),
+    # PROJ-77: 'auto' ergänzt zu bestehenden Werten
+    CheckConstraint("source IN ('manual', 'pre_restore', 'upload', 'auto')", name="ck_snap_source"),
 )
 
 # ── Indices ──────────────────────────────────────────────────────────────────

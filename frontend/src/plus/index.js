@@ -115,6 +115,14 @@ export const PlusComponents = {
   ConfigSnapshotsTab: lazy(() => import('./ConfigSnapshots/ConfigSnapshotsTab')),
   ConfigSnapshotsNodeTab: lazy(() => import('./ConfigSnapshots/ConfigSnapshotsNodeTab')),
   ConfigSnapshotOrphanPage: lazy(() => import('./ConfigSnapshots/ConfigSnapshotOrphanPage')),
+  // PROJ-77: Auto-Snapshots VM/LXC (Plus-only).
+  // NativeSnapshotBadgeMap: Render-Prop für Bulk-Lookup von p3auto_*-Snapnames
+  //   in PROJ-29 VmSnapshotSection (gibt {snapname: scheduled_job_id} an Children).
+  // Die anderen Auto-Snapshot-Komponenten (TargetSelector, AutoSnapshotFields*,
+  // RunDetailsTable, AutoBadge, PrefixCollisionWarning) werden direkt aus
+  // benachbarten Plus-Modulen (ScheduledJobs, ConfigSnapshots) importiert –
+  // kein Core-Konsument greift dort zu, daher keine Registry-Einträge nötig.
+  NativeSnapshotBadgeMap: lazy(() => import('./AutoSnapshots/NativeSnapshotBadgeMap')),
 }
 
 // PROJ-68: Conflict-Badge Hook – non-lazy export (Hook, keine Komponente).

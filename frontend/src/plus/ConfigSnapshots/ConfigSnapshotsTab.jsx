@@ -15,6 +15,8 @@ import ConfigSnapshotCreateModal from './ConfigSnapshotCreateModal'
 import ConfigSnapshotUploadModal from './ConfigSnapshotUploadModal'
 import ConfigSnapshotDetailModal from './ConfigSnapshotDetailModal'
 import ConfigSnapshotDiffModal from './ConfigSnapshotDiffModal'
+// PROJ-77: Auto-Badge für source==='auto'
+import AutoBadge from '../AutoSnapshots/AutoBadge'
 
 function formatDate(iso) {
   if (!iso) return '—'
@@ -25,6 +27,7 @@ function SourceBadge({ source, t }) {
   const styles = {
     manual: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
     upload: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+    auto:   'bg-portal-info/10 text-portal-info border border-portal-info/30',
   }
   return (
     <span className={`inline-block text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${styles[source] ?? 'bg-gray-100 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300'}`}>
@@ -107,7 +110,14 @@ export default function ConfigSnapshotsTab({ portalNodeId, proxmoxNode, vmid, ki
                 <tr key={snap.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/30">
                   <td className="px-3 py-2 font-mono text-gray-700 dark:text-zinc-300 max-w-[200px] truncate" title={snap.name}>{snap.name}</td>
                   <td className="px-3 py-2 text-gray-600 dark:text-zinc-400 max-w-[180px] truncate" title={snap.note}>{snap.note || '—'}</td>
-                  <td className="px-3 py-2"><SourceBadge source={snap.source} t={t} /></td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <SourceBadge source={snap.source} t={t} />
+                      {snap.source === 'auto' && snap.created_by_scheduled_job_id && (
+                        <AutoBadge jobId={snap.created_by_scheduled_job_id} />
+                      )}
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-gray-500 dark:text-zinc-500 whitespace-nowrap">{formatDate(snap.created_at)}</td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1 flex-wrap">
