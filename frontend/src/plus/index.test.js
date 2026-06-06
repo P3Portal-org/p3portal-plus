@@ -184,6 +184,27 @@ describe('PlusComponents Registry (PROJ-43)', () => {
     expect(PlusComponents.NativeSnapshotBadgeMap.$$typeof).toBeDefined()
   })
 
+  // PROJ-76: Stacks (Phase 1)
+  it('registers StacksListPage as a lazy component (PROJ-76)', () => {
+    expect(PlusComponents.StacksListPage).toBeTypeOf('object')
+    expect(PlusComponents.StacksListPage.$$typeof).toBeDefined()
+  })
+
+  it('registers StackEditorPage as a lazy component (PROJ-76)', () => {
+    expect(PlusComponents.StackEditorPage).toBeTypeOf('object')
+    expect(PlusComponents.StackEditorPage.$$typeof).toBeDefined()
+  })
+
+  it('registers StackDetailPage as a lazy component (PROJ-76)', () => {
+    expect(PlusComponents.StackDetailPage).toBeTypeOf('object')
+    expect(PlusComponents.StackDetailPage.$$typeof).toBeDefined()
+  })
+
+  it('registers OrphanStacksTab as a lazy component (PROJ-76)', () => {
+    expect(PlusComponents.OrphanStacksTab).toBeTypeOf('object')
+    expect(PlusComponents.OrphanStacksTab.$$typeof).toBeDefined()
+  })
+
   it('exposes only the migrated Plus components', () => {
     expect(Object.keys(PlusComponents).sort()).toEqual([
       'AddNodeCard',
@@ -206,6 +227,7 @@ describe('PlusComponents Registry (PROJ-43)', () => {
       'NativeSnapshotBadgeMap',
       'NodeDeleteButton',
       'NodeSetDefaultButton',
+      'OrphanStacksTab',
       'PlaybookPermissionsPage',
       'PlaybookPermissionsTab',
       'PoolSelectorField',
@@ -216,6 +238,9 @@ describe('PlusComponents Registry (PROJ-43)', () => {
       'ScheduledJobFormModal',
       'ScheduledJobsSettingsSection',
       'ScheduledJobsTable',
+      'StackDetailPage',
+      'StackEditorPage',
+      'StacksListPage',
       'ThemeEditor',
       'ThemeRowEditButton',
       'ThemesAdminActions',

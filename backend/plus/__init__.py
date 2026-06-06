@@ -120,6 +120,12 @@ try:
 except ImportError:
     logger.warning("auto_snapshots_plus nicht verfügbar – Core-Defaults aktiv")
 
+try:
+    from backend.plus.stacks_plus import StacksPlusBehavior
+    _mixins.append(StacksPlusBehavior)
+except ImportError:
+    logger.warning("stacks_plus nicht verfügbar – Core-Defaults aktiv")
+
 
 # ── Plus-Capability-Gate-Hooks ohne dediziertes Mixin ───────────────────────
 
@@ -168,6 +174,7 @@ class _PlusGateBehavior:
             "manage_playbook_permissions",
             "approve_jobs",
             "manage_config_snapshots_orphans",
+            "manage_orphan_stacks",
         ]
 
     def can_use_node_assignments(self) -> bool:
@@ -178,6 +185,10 @@ class _PlusGateBehavior:
 
     def can_use_auto_snapshots(self) -> bool:
         # PROJ-77 ist Plus-only.
+        return True
+
+    def can_use_stacks(self) -> bool:
+        # PROJ-76 ist Plus-only.
         return True
 
     # ── PROJ-77: Hook-Merge für get_scheduled_job_action_handlers ────────────
@@ -294,6 +305,20 @@ class _PlusGateBehavior:
             logger.debug("PROJ-77: vm_native_snapshots + Erweiterungen sichergestellt")
         except Exception as _e:
             logger.warning("PROJ-77: auto_snapshots ensure_plus_db_tables fehlgeschlagen: %s", _e)
+
+        # PROJ-76: Stacks-Tabellen (eigene plus_metadata, keine FKs auf andere Plus-Tabellen)
+        # Phase 2b: +2 Tabellen (stack_deployments/-resources via create_all) +
+        # 2 additive stacks-Spalten (last_drift_state/last_drift_at via ALTER).
+        try:
+            from backend.plus.stacks.models import (
+                plus_metadata as _stacks_meta,
+                migrate_phase2b_columns as _stacks_2b_migrate,
+            )
+            _stacks_meta.create_all(_engine, checkfirst=True)
+            _stacks_2b_migrate(_engine)
+            logger.debug("PROJ-76: stacks-Tabellen + Phase-2b-Migration sichergestellt")
+        except Exception as _e:
+            logger.warning("PROJ-76: stacks create_all fehlgeschlagen: %s", _e)
 
 
 # ── PlusActiveBehavior: dynamisch aus verfügbaren Mixins komponiert ─────────

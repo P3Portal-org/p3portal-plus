@@ -232,6 +232,124 @@ async def _handle_config_snapshot_restore(
     return None
 
 
+# ── stack_edit / stack_delete (PROJ-76) ──────────────────────────────────────
+
+async def _handle_stack_edit(
+    approval: dict,
+    full_payload: dict,
+    actor_username: str,
+) -> str | None:
+    """Wendet einen freigegebenen Stack-Edit an (PROJ-76).
+
+    Re-Check des ETag beim Approve (AC-APPR-3): bei Mismatch wird der Antrag
+    nicht blind übernommen, sondern abgebrochen.
+    """
+    from backend.plus.stacks.service import EtagConflict, apply_pending_edit
+
+    stack_id = full_payload.get("stack_id")
+    expected_etag = full_payload.get("expected_etag", "")
+    new_yaml = full_payload.get("new_yaml", "")
+    change_summary = full_payload.get("change_summary")
+    requester_user_id: int | None = approval.get("requester_user_id")
+
+    try:
+        await apply_pending_edit(
+            stack_id=int(stack_id),
+            expected_etag=expected_etag,
+            new_yaml=new_yaml,
+            change_summary=change_summary,
+            user_id=requester_user_id,
+            username=actor_username,
+        )
+    except EtagConflict as exc:
+        raise ValueError("stack_etag_changed_since_request") from exc
+    return None
+
+
+async def _handle_stack_delete(
+    approval: dict,
+    full_payload: dict,
+    actor_username: str,
+) -> str | None:
+    """Wendet einen freigegebenen Stack-Delete an (PROJ-76, Soft-Delete)."""
+    from backend.plus.stacks.service import apply_pending_delete
+
+    stack_id = full_payload.get("stack_id")
+    await apply_pending_delete(int(stack_id), actor_username)
+    return None
+
+
+# ── stack_deploy / stack_destroy (PROJ-76 Phase 2b) ──────────────────────────
+
+async def _lookup_user_role(user_id: int | None) -> str:
+    if not user_id:
+        return "operator"
+    async with get_db() as db:
+        r = await db.execute(
+            text("SELECT role FROM local_users WHERE id = :id"), {"id": user_id}
+        )
+        row = r.mappings().fetchone()
+    return (row["role"] if row else None) or "operator"
+
+
+async def _handle_stack_deploy_or_destroy(
+    approval: dict,
+    full_payload: dict,
+    actor_username: str,
+    operation: str,
+) -> str | None:
+    """Re-check + re-plan on approve, then start the apply/destroy job (Open Point 12).
+
+    AC-2B-APPR-4: a fresh plan is generated; if the etag changed or the plan
+    summary deviates from the requested one, the request is aborted instead of
+    blindly executed.
+    """
+    from backend.plus.stacks import deploy_service, service
+
+    stack_id = int(full_payload.get("stack_id"))
+    req_etag = full_payload.get("current_etag", "")
+    req_summary = full_payload.get("plan_summary", {}) or {}
+    requester_user_id = approval.get("requester_user_id")
+
+    row = await service._get_stack_row(stack_id)
+    if row["current_etag"] != req_etag:
+        raise ValueError("stack_plan_changed_since_request")
+
+    role = await _lookup_user_role(requester_user_id)
+    spec = await deploy_service._spec_of(row)
+    node = await deploy_service.resolve_target_node(spec)
+
+    # Re-gate (RBAC/Quota) + re-plan (writes a fresh planfile).
+    plan = await deploy_service.prepare_plan(
+        row, role, requester_user_id, actor_username, operation,
+    )
+    # Compare the change counts (the etag already guards the definition; this
+    # catches cluster-side drift like a vanished template).
+    new = plan.summary
+    if (new.create, new.change, new.destroy, new.replace) != (
+        int(req_summary.get("create", 0)), int(req_summary.get("change", 0)),
+        int(req_summary.get("destroy", 0)), int(req_summary.get("replace", 0)),
+    ):
+        raise ValueError("stack_plan_changed_since_request")
+
+    job = await deploy_service.start_stack_job(
+        row, operation, new, node, requester_user_id, actor_username,
+    )
+    return job["job_id"]
+
+
+async def _handle_stack_deploy(
+    approval: dict, full_payload: dict, actor_username: str
+) -> str | None:
+    return await _handle_stack_deploy_or_destroy(approval, full_payload, actor_username, "apply")
+
+
+async def _handle_stack_destroy(
+    approval: dict, full_payload: dict, actor_username: str
+) -> str | None:
+    return await _handle_stack_deploy_or_destroy(approval, full_payload, actor_username, "destroy")
+
+
 # ── Registry ─────────────────────────────────────────────────────────────────
 
 async def _handle_scheduled_job_create_auto_config_snapshot(
@@ -300,6 +418,12 @@ HANDLER_REGISTRY: dict[str, HandlerFn] = {
     # PROJ-77: optionale Approval-Integration (Default-aus, Admin muss Regel anlegen)
     "scheduled_job_create_auto_config_snapshot": _handle_scheduled_job_create_auto_config_snapshot,
     "scheduled_job_create_auto_vm_snapshot":     _handle_scheduled_job_create_auto_vm_snapshot,
+    # PROJ-76: Stack-Edit/-Delete (Default-aus, Admin muss Regel anlegen)
+    "stack_edit":                _handle_stack_edit,
+    "stack_delete":              _handle_stack_delete,
+    # PROJ-76 Phase 2b: Stack-Deploy/-Destroy (Default-aus, Re-Check beim Approve)
+    "stack_deploy":              _handle_stack_deploy,
+    "stack_destroy":             _handle_stack_destroy,
 }
 
 

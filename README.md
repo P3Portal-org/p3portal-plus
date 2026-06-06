@@ -36,6 +36,13 @@ AGPLv3 terms), see: https://github.com/P3Portal-org/p3portal
 
 Plus adds to Core (non-exhaustive list):
 
+- **Stacks** — declarative VM infrastructure as code: define a stack
+  in YAML or a form, version it, and plan / deploy / destroy it via
+  the bundled OpenTofu engine, with drift detection
+- **VM / LXC config snapshots** — save a VM or container `.conf` as a
+  versioned JSON snapshot, diff it, and restore selected keys
+- **Auto-snapshots on a schedule** — Proxmox-native and config
+  snapshots on a cron schedule with keep-last / GFS retention
 - **Scheduled Jobs** — cron-based execution of Ansible playbooks, SSH
   commands, and VM power actions
 - **Resource Pools with quotas** — own portal pools with CPU / RAM /
@@ -80,10 +87,10 @@ A rolling snapshot of the Plus paths from the maintainer's private working copy:
 
 | Path | Origin |
 |---|---|
-| `backend/plus/` | Mediator-based Plus hooks (PROJ-43, PROJ-60) |
+| `backend/plus/` | Mediator-based Plus hook system |
 | `frontend/src/plus/` | Plus React components (Pools, Approvals, GitSync, etc.) |
-| `tools/inject_license_headers.py` | SPDX header injection tool (PROJ-61) |
-| `tools/license_config.py` | Author + LEGAL_ENTITY config (PROJ-61) |
+| `tools/inject_license_headers.py` | SPDX header injection tool |
+| `tools/license_config.py` | Author + LEGAL_ENTITY config |
 | `LICENSE-PLUS` | Source-available license text |
 | `.githooks/pre-commit` | License header check |
 | `.core-version` | Pinned Core repo tag (Plus is built against this Core version) |
@@ -135,4 +142,4 @@ affect the licence terms: this repository's source is covered by
 
 ---
 
-Solo-maintainer project. External PRs are not accepted and are auto-closed by `.github/workflows/close-prs.yml`. The four Solo-Owner pillars are: PROJ-60 Mediator + close-prs.yml + LEGAL_ENTITY=None + Source-Available under LICENSE-PLUS (modification/redistribution prohibited).
+Solo-maintainer project. External PRs are not accepted and are auto-closed by `.github/workflows/close-prs.yml`. The four Solo-Owner pillars are: the Mediator pattern + close-prs.yml + LEGAL_ENTITY=None + Source-Available under LICENSE-PLUS (modification/redistribution prohibited).

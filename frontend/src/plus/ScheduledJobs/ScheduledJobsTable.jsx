@@ -8,6 +8,7 @@
 // p3portal.org
 import { useState } from 'react'
 import { toggleScheduledJob, deleteScheduledJob, runScheduledJobNow } from '../../api/scheduledJobs'
+import ConfirmModal from '../../components/common/ConfirmModal'
 
 const TYPE_BADGE = {
   playbook:     { label: 'Playbook', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' },
@@ -45,6 +46,7 @@ function ActionBtn({ onClick, disabled, title, children, danger }) {
 
 export default function ScheduledJobsTable({ jobs, onEdit, onDetail, onReload }) {
   const [busyId, setBusyId] = useState(null)
+  const [confirmJob, setConfirmJob] = useState(null)
 
   const withBusy = async (id, fn) => {
     setBusyId(id)
@@ -64,6 +66,7 @@ export default function ScheduledJobsTable({ jobs, onEdit, onDetail, onReload })
   }
 
   return (
+    <>
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
@@ -177,10 +180,7 @@ export default function ScheduledJobsTable({ jobs, onEdit, onDetail, onReload })
 
                     {/* Löschen */}
                     <ActionBtn
-                      onClick={() => {
-                        if (!confirm(`Job "${job.name}" wirklich löschen?`)) return
-                        withBusy(job.id, () => deleteScheduledJob(job.id))
-                      }}
+                      onClick={() => setConfirmJob(job)}
                       disabled={busy}
                       title="Löschen"
                       danger
@@ -200,5 +200,20 @@ export default function ScheduledJobsTable({ jobs, onEdit, onDetail, onReload })
         </tbody>
       </table>
     </div>
+
+    {confirmJob && (
+      <ConfirmModal
+        title={`Job „${confirmJob.name}" löschen?`}
+        body={`Der Scheduled Job „${confirmJob.name}" wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.`}
+        confirmLabel="Löschen"
+        variant="danger"
+        onConfirm={async () => {
+          await deleteScheduledJob(confirmJob.id)
+          onReload()
+        }}
+        onClose={() => setConfirmJob(null)}
+      />
+    )}
+    </>
   )
 }

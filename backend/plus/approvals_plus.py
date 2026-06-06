@@ -186,4 +186,6 @@ def _extract_action_target(action_type: str, payload: dict) -> str:
         node_id = payload.get("node_id", "")
         vmid = payload.get("vmid", "")
         return f"{node_id}:{vmid}"
+    if action_type in ("stack_edit", "stack_delete", "stack_deploy", "stack_destroy"):
+        return str(payload.get("stack_id", ""))
     return str(payload.get("target", ""))

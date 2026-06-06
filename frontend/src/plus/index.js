@@ -123,6 +123,15 @@ export const PlusComponents = {
   // benachbarten Plus-Modulen (ScheduledJobs, ConfigSnapshots) importiert –
   // kein Core-Konsument greift dort zu, daher keine Registry-Einträge nötig.
   NativeSnapshotBadgeMap: lazy(() => import('./AutoSnapshots/NativeSnapshotBadgeMap')),
+  // PROJ-76 Phase 1: Stacks (deklaratives Infrastructure-Modell, Plus-only).
+  // StacksListPage/StackEditorPage/StackDetailPage: Route-Komponenten (/stacks…).
+  // OrphanStacksTab: System-Settings-Tab „Verwaiste Stacks" (manage_orphan_stacks).
+  // Editor-/Diff-/Restore-/Konflikt-Modals werden Plus→Plus direkt importiert
+  // (kein Core-Konsument greift dort zu, daher keine Registry-Einträge).
+  StacksListPage: lazy(() => import('./Stacks/StacksListPage')),
+  StackEditorPage: lazy(() => import('./Stacks/StackEditorPage')),
+  StackDetailPage: lazy(() => import('./Stacks/StackDetailPage')),
+  OrphanStacksTab: lazy(() => import('./Stacks/OrphanStacksTab')),
 }
 
 // PROJ-68: Conflict-Badge Hook – non-lazy export (Hook, keine Komponente).

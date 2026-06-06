@@ -162,6 +162,55 @@ class PoolsPlusBehavior:
             pool_id=pool_id,
         )
 
+    async def check_pool_quota_bulk(
+        self, user_id: int, pool_id: int, vm_count: int,
+        total_cores: int, total_ram_mb: int, total_disk_gb: int,
+    ) -> QuotaResult:
+        """PROJ-76 Phase 2b: Quota-Check für N VMs mit Summen (Stack-Deploy).
+
+        Anders als check_pool_quota (hart single-VM, +1) summiert dieser Check
+        die aufgelösten Stack-Ressourcen (AC-2B-RBAC-3 / Tech-Design A-3).
+        """
+        from backend.plus.pools import service as pool_service
+
+        async with get_db() as db:
+            pool_result = await db.execute(
+                text("SELECT * FROM pools WHERE id = :id"),
+                {"id": pool_id},
+            )
+            pool_row = pool_result.mappings().fetchone()
+            if not pool_row:
+                return QuotaResult(allowed=True)
+            usage = await pool_service._calculate_usage(db, pool_id)
+
+        exceeded: list[str] = []
+        if pool_row["vm_count_quota"] > 0 and (usage["vm_count"] + vm_count) > pool_row["vm_count_quota"]:
+            exceeded.append("vm_count")
+        if pool_row["cpu_quota"] > 0 and (usage["cpu_used"] + total_cores) > pool_row["cpu_quota"]:
+            exceeded.append("cpu_cores")
+        if pool_row["ram_quota_mb"] > 0 and (usage["ram_used"] + total_ram_mb) > pool_row["ram_quota_mb"]:
+            exceeded.append("ram_mb")
+        if pool_row["disk_quota_gb"] > 0 and (usage["disk_used"] + total_disk_gb) > pool_row["disk_quota_gb"]:
+            exceeded.append("disk_gb")
+
+        return QuotaResult(
+            allowed=len(exceeded) == 0,
+            exceeded=exceeded,
+            current={
+                "vm_count": usage["vm_count"], "cpu_cores": usage["cpu_used"],
+                "ram_mb": usage["ram_used"], "disk_gb": usage["disk_used"],
+            },
+            requested={
+                "vm_count": vm_count, "cpu_cores": total_cores,
+                "ram_mb": total_ram_mb, "disk_gb": total_disk_gb,
+            },
+            limit={
+                "vm_count": pool_row["vm_count_quota"], "cpu_cores": pool_row["cpu_quota"],
+                "ram_mb": pool_row["ram_quota_mb"], "disk_gb": pool_row["disk_quota_gb"],
+            },
+            pool_id=pool_id,
+        )
+
     # ── Stale-Check für Sidebar-Pins ──────────────────────────────────────────
 
     async def get_existing_pool_ids(self, candidate_ids: set[int]) -> set[int]:

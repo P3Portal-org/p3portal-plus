@@ -95,7 +95,7 @@ P3 Portal Plus operates under a four-pillar solo-owner posture
 to keep the project's legal structure clean for a single
 copyright holder:
 
-1. **PROJ-60 Mediator pattern** — Core depends on no Plus symbol
+1. **Mediator pattern** — Core depends on no Plus symbol
    directly, so Plus can be developed and released independently
 2. **`close-prs.yml`** — external PRs auto-closed on both Core
    and Plus repositories
@@ -106,7 +106,7 @@ copyright holder:
    source file, modification prohibited
 
 The fourth pillar evolved from an earlier "Plus-Code not public"
-posture (PROJ-72 Phase A/B) into "Source-Available under
+posture into "Source-Available under
 LICENSE-PLUS" once the legal protection mechanism was understood
 to function independently of repo visibility. Both postures
 protect the code; the current one is friendlier for discovery and
