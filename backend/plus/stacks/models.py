@@ -29,6 +29,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
 )
 
 # Eigene MetaData – getrennt vom Core-Schema (Pattern PROJ-62/63/64/70/74)
@@ -155,6 +156,46 @@ stack_deployed_resources = Table(
 )
 
 
+# ── stack_cloud_init (PROJ-85: deklarative Login-/IP-Daten, getrennt vom YAML) ─
+#
+# Eine Zeile pro Ziel: vm_name='' = Stack-Default, vm_name=<resource_name> =
+# Per-VM-Override. Liegt bewusst NICHT im stacks.yaml_text/stack_versions
+# (kein Secret im Versionsverlauf, AC-STORE-1/3). Das Passwort ist Fernet-
+# verschlüsselt (password_enc, AC-STORE-2 — Muster Node-Token-Secrets); SSH-Keys
+# und IP-Felder sind nicht geheim (Klartext). Liegt in derselben plus_metadata
+# → FK auf stacks löst direkt auf + wird von create_all(checkfirst=True)
+# automatisch angelegt (keine eigene Migrationsfunktion, Tech-Design B).
+# Hard-Delete des Stacks → CASCADE räumt die Zeilen ab (kein Cleanup-Hook nötig).
+
+stack_cloud_init = Table(
+    "stack_cloud_init", plus_metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("stack_id", Integer,
+           ForeignKey("stacks.id", ondelete="CASCADE"), nullable=False),
+    # '' = Stack-Default-Sentinel, sonst Resource-/Karten-Name (Override).
+    # Empty-String statt NULL, weil NULL in UNIQUE in beiden Dialekten *distinct*
+    # ist → sonst mehrere Defaults möglich (Bug). (Tech-Design B)
+    Column("vm_name", String(64), nullable=False),
+    Column("enabled", Boolean, nullable=False, server_default="0"),
+    Column("username", String(64)),
+    # Fernet-Blob (config_service.encrypt_secret); NIE Klartext at-rest.
+    Column("password_enc", Text),
+    # JSON-Array von Public-Key-Strings (Klartext, nicht geheim).
+    Column("ssh_keys_json", Text),
+    # 'dhcp' | 'static' | NULL — kein DB-CHECK (Validierung in Pydantic, Muster
+    # last_drift_state) → keine Enum-Migration je Phase.
+    Column("ip_mode", String(16)),
+    Column("ip_address_cidr", String(64)),
+    Column("ip_gateway", String(64)),
+    Column("dns_servers", String(255)),   # komma-/leerzeichen-separiert
+    Column("dns_domain", String(255)),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+    # Default ('') pro Stack eindeutig; Override pro (stack, name) eindeutig.
+    UniqueConstraint("stack_id", "vm_name", name="uq_stack_cloud_init_target"),
+)
+
+
 # ── Indices ──────────────────────────────────────────────────────────────────
 
 # Partial-UNIQUE: gleicher Name pro Owner nur bei aktiven (nicht gelöschten/orphan) Stacks
@@ -189,6 +230,9 @@ Index(
     unique=True,
 )
 Index("idx_stack_deployed_resources_stack", stack_deployed_resources.c.stack_id)
+
+# PROJ-85: lookup all cloud-init rows of a stack (default + overrides) in one query.
+Index("idx_stack_cloud_init_stack", stack_cloud_init.c.stack_id)
 
 
 # ── Phase 2b additive migration (existing Phase-1 installs) ───────────────────

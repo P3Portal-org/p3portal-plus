@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import jsyaml from 'js-yaml'
 import { useAuth } from '../../hooks/useAuth'
 import { useCapability } from '../../hooks/useCapability'
 import { formatApiError } from '../../api/errors'
@@ -22,6 +23,24 @@ import StackPlanModal from './StackPlanModal'
 import StackDriftModal from './StackDriftModal'
 import StackDeploymentsTab from './StackDeploymentsTab'
 import StackResourcesTab from './StackResourcesTab'
+import HelpButton from '../../features/help/components/HelpButton'
+
+// PROJ-91 (§H): informativer Plan-Hinweis – wie viele Gäste eine aktive Firewall
+// bekommen + wie viele stack-eigene Security-Groups angelegt werden. Aus dem YAML
+// best-effort abgeleitet (die FW-Artefakte laufen über den Post-Apply-Commit und
+// tauchen nicht im tofu-Plan auf).
+function firewallHintOf(yamlText) {
+  try {
+    const obj = jsyaml.load(yamlText)
+    if (!obj || typeof obj !== 'object') return null
+    const guests = (Array.isArray(obj.resources) ? obj.resources : [])
+      .filter((r) => r?.firewall?.enabled).length
+    const groups = (Array.isArray(obj.security_groups) ? obj.security_groups : []).length
+    return (guests > 0 || groups > 0) ? { guests, groups } : null
+  } catch {
+    return null
+  }
+}
 
 function ResourceRow({ r }) {
   return (
@@ -87,6 +106,7 @@ export default function StackDetailPage() {
         <div className="flex items-center gap-2 min-w-0">
           <button onClick={() => navigate('/stacks')} className="btn-table" aria-label={t('common.back')}>←</button>
           <h1 className="text-sm font-semibold text-gray-900 dark:text-zinc-100 truncate">{stack?.name || t('stacks.title')}</h1>
+          <HelpButton helpKey="stacks.detail" />
           {stack && <span className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium bg-portal-bg3 text-portal-text2">v{stack.version}</span>}
           {stack && (
             <span className={`shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium ${stack.status === 'active' ? 'bg-portal-success/15 text-portal-success' : 'bg-portal-bg3 text-portal-text2'}`}>
@@ -194,6 +214,7 @@ export default function StackDetailPage() {
           stackId={Number(id)}
           stackName={stack.name}
           operation={planOp}
+          firewallHint={planOp === 'apply' ? firewallHintOf(stack.yaml_text) : null}
           onClose={() => setPlanOp(null)}
           onStarted={() => { invalidate(Number(id)); setTab('deployments') }}
         />

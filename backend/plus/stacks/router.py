@@ -24,9 +24,11 @@ from backend.core.deps import CurrentUser, get_current_user, require_admin_or
 from backend.core.plus_protocol import plus_behavior
 from backend.features.api_surface.deps import require_scope_for_upk
 
-from . import deploy_service, service
+from . import cloud_init, deploy_service, service
 from .permissions import can_manage_stack
 from .schemas import (
+    CloudInitConfigRequest,
+    CloudInitConfigResponse,
     DeployJobResponse,
     DeploymentResponse,
     DeployRequest,
@@ -324,6 +326,32 @@ async def restore_version(
         )
     except EtagConflict as conflict:
         return JSONResponse(status_code=409, content=conflict.body.model_dump())
+
+
+# ── PROJ-85: Cloud-Init login/IP (separate encrypted store, not in YAML) ──────
+
+@router.get("/{stack_id}/cloud-init", response_model=CloudInitConfigResponse)
+async def get_stack_cloud_init(
+    stack_id: int,
+    current_user: CurrentUser = Depends(get_current_user),
+    _scope: CurrentUser = Depends(require_scope_for_upk("stacks:read")),
+):
+    _check_plus()
+    await _load_and_authorize(stack_id, current_user, include_deleted=(current_user.role == "admin"))
+    return await cloud_init.get_cloud_init(stack_id)
+
+
+@router.put("/{stack_id}/cloud-init", response_model=CloudInitConfigResponse)
+async def put_stack_cloud_init(
+    stack_id: int,
+    body: CloudInitConfigRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    _scope: CurrentUser = Depends(require_scope_for_upk("stacks:write")),
+):
+    _check_plus()
+    await _load_and_authorize(stack_id, current_user)
+    # No approval-202: cloud-init is not versioned/approved (AC-STORE-3).
+    return await cloud_init.put_cloud_init(stack_id, body, current_user.username)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

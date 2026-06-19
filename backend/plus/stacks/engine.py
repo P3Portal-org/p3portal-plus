@@ -47,9 +47,51 @@ logger = logging.getLogger(__name__)
 # Filename of the state-encryption passphrase inside the data volume.
 STATE_KEY_FILENAME = "tofu_state.key"
 
+# PROJ-66 Phase 2: bpg provider offline-mirror path (single source).
+# Mirrors the Dockerfile contract (`mkdir -p /opt/tofu/plugin-mirror` +
+# `tofu providers mirror ... /opt/tofu/plugin-mirror` + tofurc filesystem_mirror,
+# Dockerfile lines ~98-102). The tooling-health check (run_tofu_check) imports
+# this constant + the helper below so the path is never duplicated/hardcoded
+# elsewhere. No HCL parsing of tofurc needed — the constant is the contract.
+TOFU_PROVIDER_MIRROR = "/opt/tofu/plugin-mirror"
+
+
+def tofu_provider_mirror_present() -> bool:
+    """True when the bpg provider offline-mirror exists and is non-empty.
+
+    Pure filesystem existence/read check (no subprocess, no network), used by
+    the PROJ-66 Phase 2 tooling-health check to distinguish ``ready`` (binary +
+    mirror) from ``degraded`` (binary, mirror missing → air-gapped deploys fail).
+    """
+    mirror = Path(TOFU_PROVIDER_MIRROR)
+    try:
+        return mirror.is_dir() and any(mirror.iterdir())
+    except OSError:
+        return False
+
 # Per-stack locks: "1 tofu run per stack" (Tech-Design 2a-7, Muster PROJ-74/77).
 # Phase 2b wires the HTTP-409 around this lock (deploy_service).
 _STACK_LOCKS: dict[str, asyncio.Lock] = {}
+
+# PROJ-87 (designed, dormant — SDN-VNet is a follow-up phase): a single global
+# lock that serializes every SDN-touching stack deploy. PVE-SDN commits all
+# pending objects with one cluster-wide ``PUT /cluster/sdn`` (affects every
+# node), which breaks the per-stack state isolation. The mitigation is to acquire
+# this lock *in addition* to (and **before**) the per-stack lock so no two
+# SDN-touching deploys run their global apply in parallel (Tech-Design D /
+# AC-VN-2 / EC-2). Acquire order SDN→per-stack is deadlock-free (the broader lock
+# always comes first). Stays unused in the MVP (validation rejects kind="vnet").
+_SDN_APPLY_LOCK = asyncio.Lock()
+
+
+def get_sdn_apply_lock() -> asyncio.Lock:
+    """Return the module-global SDN-apply lock (PROJ-87, dormant in the MVP).
+
+    Single-container reality, like the per-stack locks. The SDN-VNet deploy path
+    (follow-up phase, after the bpg-0.78 PVE verification) acquires this lock
+    before the per-stack lock to serialize the cluster-wide ``PUT /cluster/sdn``.
+    """
+    return _SDN_APPLY_LOCK
 
 # Phase 2b: registry of running tofu processes per stack for cancellation (SIGINT).
 _RUNNING_TOFU: dict[str, asyncio.subprocess.Process] = {}
@@ -207,15 +249,21 @@ async def run_tofu(
 
 # ── Phase 2b: streaming run + init + cancel ───────────────────────────────────
 
-def _mask_line(line: str, secret: str | None) -> str:
-    """Mask the bpg token secret if it ever appears in a log line (Open Point 11).
+def _mask_line(line: str, secret: str | None, extra_secrets: list[str] | None = None) -> str:
+    """Mask the bpg token secret (+ optional extra secrets) in a log line.
 
-    Belt-and-suspenders: ``TF_LOG`` is already forced off (no provider debug
-    output), but this guarantees ``PROXMOX_VE_API_TOKEN`` never leaks into the
-    job log (AC-2B-DEP-6).
+    Belt-and-suspenders (Open Point 11): ``TF_LOG`` is already forced off (no
+    provider debug output) and bpg marks sensitive attributes, but this
+    guarantees ``PROXMOX_VE_API_TOKEN`` never leaks into the job log
+    (AC-2B-DEP-6). ``extra_secrets`` (PROJ-85 OBS-1, /qa S629) carries the active
+    cloud-init passwords so they are masked here too, independent of whether the
+    bpg provider redacts them in its plan/apply output.
     """
     if secret and secret in line:
-        return line.replace(secret, "***")
+        line = line.replace(secret, "***")
+    for extra in extra_secrets or ():
+        if extra and extra in line:
+            line = line.replace(extra, "***")
     return line
 
 
@@ -225,6 +273,7 @@ async def run_tofu_streaming(
     node: NodeRow,
     *,
     log_path: Path | None = None,
+    extra_secrets: list[str] | None = None,
 ) -> int:
     """Run ``tofu <args>`` and tee stdout/stderr line-by-line into ``log_path``.
 
@@ -251,7 +300,7 @@ async def run_tofu_streaming(
     try:
         assert proc.stdout is not None
         async for raw in proc.stdout:
-            line = _mask_line(raw.decode("utf-8", "replace"), secret)
+            line = _mask_line(raw.decode("utf-8", "replace"), secret, extra_secrets)
             if log_fh:
                 log_fh.write(line)
                 log_fh.flush()

@@ -513,14 +513,14 @@ async def enable_workflow(actor_user_id: int, actor_username: str) -> dict:
             text("""
                 INSERT INTO approval_workflow_config
                     (id, enabled, default_expiration_hours, allow_self_approval_global)
-                VALUES (1, 0, 48, 0)
+                VALUES (1, false, 48, false)
                 ON CONFLICT DO NOTHING
             """)
         )
         await db.execute(
             text("""
                 UPDATE approval_workflow_config
-                   SET enabled=1, updated_at=:now, updated_by_user_id=:uid
+                   SET enabled=true, updated_at=:now, updated_by_user_id=:uid
                  WHERE id=1
             """),
             {"now": now, "uid": actor_user_id},
@@ -580,14 +580,14 @@ async def disable_workflow(actor_user_id: int, actor_username: str) -> dict:
             text("""
                 INSERT INTO approval_workflow_config
                     (id, enabled, default_expiration_hours, allow_self_approval_global)
-                VALUES (1, 0, 48, 0)
+                VALUES (1, false, 48, false)
                 ON CONFLICT DO NOTHING
             """)
         )
         await db.execute(
             text("""
                 UPDATE approval_workflow_config
-                   SET enabled=0, updated_at=:now, updated_by_user_id=:uid
+                   SET enabled=false, updated_at=:now, updated_by_user_id=:uid
                  WHERE id=1
             """),
             {"now": now, "uid": actor_user_id},

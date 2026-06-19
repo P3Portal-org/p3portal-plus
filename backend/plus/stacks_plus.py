@@ -51,3 +51,14 @@ class StacksPlusBehavior:
         """SIGINT a running tofu apply/destroy for a stack (AC-2B-LOCK/Cancel)."""
         from backend.plus.stacks.engine import cancel_tofu
         return cancel_tofu(str(stack_id))
+
+    # ── PROJ-91: stack-firewall mutations-block lookup ───────────────────────
+
+    async def get_stack_firewall_for_vm(self, portal_node_id: int, vmid: int) -> dict | None:
+        """Return {stack_id, stack_name} if a VM's firewall is stack-managed (AC-MUT-1).
+
+        Stricter than get_stack_for_vm: only blocks the PROJ-90 firewall mutation
+        when the stack resource has an active firewall block. Core returns None.
+        """
+        from backend.plus.stacks.deployments import get_stack_firewall_for_vm
+        return await get_stack_firewall_for_vm(portal_node_id, vmid)

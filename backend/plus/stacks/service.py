@@ -232,7 +232,7 @@ async def create_stack(
                 "(name, description, yaml_text, version, status, source_kind, "
                 " owner_user_id, is_orphan, current_etag, created_at, updated_at) "
                 "VALUES (:name, :desc, :yaml, :version, 'active', 'structured', "
-                ":uid, 0, :etag, :now, :now)"
+                ":uid, false, :etag, :now, :now)"
             ),
             {
                 "name": spec.name,
@@ -627,7 +627,7 @@ async def list_orphans() -> list[OrphanStackResponse]:
     async with get_db() as db:
         result = await db.execute(
             text(
-                "SELECT * FROM stacks WHERE is_orphan = 1 AND deleted_at IS NULL "
+                "SELECT * FROM stacks WHERE is_orphan = true AND deleted_at IS NULL "
                 "ORDER BY orphaned_at DESC"
             )
         )
@@ -650,7 +650,7 @@ async def list_orphans() -> list[OrphanStackResponse]:
 async def reassign_orphan(stack_id: int, new_owner_user_id: int, admin_username: str) -> StackResponse:
     async with get_db() as db:
         result = await db.execute(
-            text("SELECT * FROM stacks WHERE id = :sid AND is_orphan = 1 AND deleted_at IS NULL"),
+            text("SELECT * FROM stacks WHERE id = :sid AND is_orphan = true AND deleted_at IS NULL"),
             {"sid": stack_id},
         )
         row = result.mappings().fetchone()
@@ -665,7 +665,7 @@ async def reassign_orphan(stack_id: int, new_owner_user_id: int, admin_username:
             raise HTTPException(status_code=422, detail="owner_user_not_found")
         await db.execute(
             text(
-                "UPDATE stacks SET owner_user_id = :uid, is_orphan = 0, orphaned_at = NULL, "
+                "UPDATE stacks SET owner_user_id = :uid, is_orphan = false, orphaned_at = NULL, "
                 "updated_at = :now WHERE id = :sid"
             ),
             {"uid": new_owner_user_id, "now": _now(), "sid": stack_id},
@@ -681,7 +681,7 @@ async def reassign_orphan(stack_id: int, new_owner_user_id: int, admin_username:
 async def purge_orphan(stack_id: int, admin_username: str) -> None:
     async with get_db() as db:
         result = await db.execute(
-            text("SELECT id FROM stacks WHERE id = :sid AND is_orphan = 1"),
+            text("SELECT id FROM stacks WHERE id = :sid AND is_orphan = true"),
             {"sid": stack_id},
         )
         if result.mappings().fetchone() is None:

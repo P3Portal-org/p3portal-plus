@@ -13,24 +13,28 @@ count==1 lässt den Namen unverändert (kein Suffix).
 """
 from __future__ import annotations
 
-from .schemas import PreviewResource, StackSpec, VMResource
+from typing import Any
+
+from .schemas import PreviewResource, StackSpec
 
 
 def resolve_resources(spec: StackSpec) -> list[PreviewResource]:
-    """Expand each VMResource into one PreviewResource per ``count`` instance."""
+    """Expand each resource into one PreviewResource per ``count`` instance."""
     out: list[PreviewResource] = []
     for r in spec.resources:
         out.extend(_expand_one(r))
     return out
 
 
-def _expand_one(r: VMResource) -> list[PreviewResource]:
+def _expand_one(r: Any) -> list[PreviewResource]:
     if r.count <= 1:
         return [_to_preview(r, r.name)]
     return [_to_preview(r, f"{r.name}-{i}") for i in range(1, r.count + 1)]
 
 
-def _to_preview(r: VMResource, resolved_name: str) -> PreviewResource:
+def _to_preview(r: Any, resolved_name: str) -> PreviewResource:
+    # PROJ-86: typ-aware disk — VM reports its root disk, LXC its rootfs size.
+    disk = r.rootfs_size if getattr(r, "type", "vm") == "lxc" else r.disk
     return PreviewResource(
         type=r.type,
         name=resolved_name,
@@ -38,7 +42,7 @@ def _to_preview(r: VMResource, resolved_name: str) -> PreviewResource:
         template=r.template,
         cores=r.cores,
         memory=r.memory,
-        disk=r.disk,
+        disk=disk,
         pool=r.pool,
     )
 

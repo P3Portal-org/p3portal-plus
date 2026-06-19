@@ -16,6 +16,7 @@ import { formatApiError } from '../../api/errors'
 import ConfirmModal from '../../components/common/ConfirmModal'
 import PlusBadge from '../../components/common/PlusBadge'
 import Watermark from '../../components/common/Watermark'
+import HelpButton from '../../features/help/components/HelpButton'
 import DeploymentStateBadge from './DeploymentStateBadge'
 import { useStacks, useDeleteStack } from './hooks'
 
@@ -63,6 +64,7 @@ export default function StacksListPage() {
       <header className="h-12 flex items-center justify-between px-6 border-b border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shrink-0">
         <div className="flex items-center gap-2">
           <h1 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{t('stacks.title')}</h1>
+          <HelpButton helpKey="stacks" />
           <PlusBadge />
         </div>
         <button onClick={() => navigate('/stacks/new')} className="btn-primary">

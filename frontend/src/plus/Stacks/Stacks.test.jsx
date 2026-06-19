@@ -17,6 +17,7 @@ import i18n from '../../i18n'
 vi.mock('./hooks', () => ({
   useStackVersions: vi.fn(),
   useNodeVmOptions: vi.fn(() => ({ data: undefined })),
+  useImageStorages: vi.fn(() => ({ data: undefined })),
 }))
 
 vi.mock('./api', () => ({

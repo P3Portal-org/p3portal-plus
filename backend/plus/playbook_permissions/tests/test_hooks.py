@@ -167,7 +167,8 @@ async def test_can_user_execute_deny_when_restricted_mode_no_whitelist(behavior,
     from backend.plus.playbook_permissions import service as svc
     async with get_db() as db:
         await db.execute(
-            text("INSERT OR REPLACE INTO playbook_permissions_config (id, default_mode, updated_at) VALUES (1, 'restricted', :now)"),
+            text("INSERT INTO playbook_permissions_config (id, default_mode, updated_at) VALUES (1, 'restricted', :now) "
+                 "ON CONFLICT (id) DO UPDATE SET default_mode=excluded.default_mode, updated_at=excluded.updated_at"),
             {"now": datetime.now(timezone.utc).isoformat()},
         )
         await db.commit()
@@ -232,8 +233,9 @@ async def test_on_group_deleted_removes_entries(behavior):
     uid = await _create_user("grp_user")
     async with get_db() as db:
         r = await db.execute(
+            # created_by ist String (groups.created_by); str(uid) statt int für PG-Portabilität
             text("INSERT INTO groups (name, created_at, created_by) VALUES ('grp1', :now, :uid) RETURNING id"),
-            {"now": datetime.now(timezone.utc).isoformat(), "uid": uid},
+            {"now": datetime.now(timezone.utc).isoformat(), "uid": str(uid)},
         )
         gid = r.fetchone()[0]
         await db.commit()

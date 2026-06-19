@@ -162,3 +162,25 @@ export async function fetchLiveResources(id) {
   const { data } = await client.get(`${BASE}/${id}/resources/live`)
   return data
 }
+
+// ── PROJ-85: Cloud-Init-Login (eigener verschlüsselter Store, getrennt vom YAML) ─
+
+/**
+ * Liest Stack-Default + Per-VM-Overrides. Passwort NIE im Klartext – nur
+ * `password_set: bool` (AC-STORE-4). Overrides tragen `orphan` (EC-4).
+ * @returns CloudInitConfigResponse { default, overrides[] }
+ */
+export async function getCloudInit(id) {
+  const { data } = await client.get(`${BASE}/${id}/cloud-init`)
+  return data
+}
+
+/**
+ * Voll-Ersatz von Default + Overrides. Passwort write-only: leer/weggelassen =
+ * unverändert (Merge, EC-6). 422 bei Lockout / static+count>1 / Key-Formfehler;
+ * der axios-Fehler wird weitergereicht.
+ */
+export async function putCloudInit(id, body) {
+  const { data } = await client.put(`${BASE}/${id}/cloud-init`, body)
+  return data
+}

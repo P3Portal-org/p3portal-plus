@@ -126,6 +126,18 @@ try:
 except ImportError:
     logger.warning("stacks_plus nicht verfügbar – Core-Defaults aktiv")
 
+try:
+    from backend.plus.ansible_inventory.mediator import AnsibleInventoryPlusBehavior
+    _mixins.append(AnsibleInventoryPlusBehavior)
+except ImportError:
+    logger.warning("ansible_inventory mediator nicht verfügbar – Core-Defaults aktiv")
+
+try:
+    from backend.plus.dependencies_plus import DependenciesPlusBehavior
+    _mixins.append(DependenciesPlusBehavior)
+except ImportError:
+    logger.warning("dependencies_plus nicht verfügbar – Core-Defaults aktiv")
+
 
 # ── Plus-Capability-Gate-Hooks ohne dediziertes Mixin ───────────────────────
 
@@ -175,6 +187,8 @@ class _PlusGateBehavior:
             "approve_jobs",
             "manage_config_snapshots_orphans",
             "manage_orphan_stacks",
+            "manage_ansible_inventory",
+            "manage_dependencies",
         ]
 
     def can_use_node_assignments(self) -> bool:
@@ -190,6 +204,47 @@ class _PlusGateBehavior:
     def can_use_stacks(self) -> bool:
         # PROJ-76 ist Plus-only.
         return True
+
+    def can_use_ansible_inventory(self) -> bool:
+        # PROJ-83: Pool-/Global-Scope + Key-Management sind Plus-only.
+        return True
+
+    def can_use_topology(self) -> bool:
+        # PROJ-75: Cluster-Topologie-Ansicht ist Plus-only.
+        return True
+
+    def can_use_packer_editor(self) -> bool:
+        # PROJ-92: Packer Visual Editor ist Plus-only.
+        return True
+
+    def can_use_ansible_editor(self) -> bool:
+        # PROJ-93: Ansible Visual Editor ist Plus-only.
+        return True
+
+    # ── PROJ-66 Phase 2: OpenTofu tooling-health-check (binary-gekoppelt) ─────
+    #
+    # Liefert die Tofu-Tool-Config NUR wenn das `tofu`-Binary im Image vorhanden
+    # ist (Plus-Image, Stacks Phase 2a). Im Plus-Image OHNE Lizenz (Core-Mode)
+    # läuft diese Impl trotzdem, weil der Dispatcher get_additional_tooling_checks
+    # als Lifecycle-Override ohne is_plus_edition()-Gate aufruft (Muster
+    # ensure_plus_db_tables, [[feedback_lifecycle_hooks_override]]). Damit ist der
+    # Indikator an die Binary-Präsenz gekoppelt, nicht an die Lizenz (P2-2).
+    # Hypothetisches Plus-Image ohne Binary → which schlägt fehl → [] → kein
+    # "down"-Dauerpunkt (AC-P2-HOOK-3).
+    def get_additional_tooling_checks(self) -> list:
+        import shutil
+
+        if shutil.which("tofu") is None:
+            return []
+        from backend.plus.tooling.checks import run_tofu_check
+
+        return [
+            {
+                "tool_id": "opentofu",
+                "display_name": "OpenTofu",
+                "runner": run_tofu_check,
+            }
+        ]
 
     # ── PROJ-77: Hook-Merge für get_scheduled_job_action_handlers ────────────
     #
@@ -319,6 +374,22 @@ class _PlusGateBehavior:
             logger.debug("PROJ-76: stacks-Tabellen + Phase-2b-Migration sichergestellt")
         except Exception as _e:
             logger.warning("PROJ-76: stacks create_all fehlgeschlagen: %s", _e)
+
+        # PROJ-83: Ansible-Keypair-Tabellen (Pool-/Global-Key, Phantom pools)
+        try:
+            from backend.plus.ansible_inventory import ensure_plus_db_tables as _ai_migrate
+            _ai_migrate(_engine)
+            logger.debug("PROJ-83: ansible-keypair-Tabellen sichergestellt")
+        except Exception as _e:
+            logger.warning("PROJ-83: ansible_inventory ensure_plus_db_tables fehlgeschlagen: %s", _e)
+
+        # PROJ-96: vm_dependencies-Tabelle (eigene plus_metadata, Phantom nodes/local_users)
+        try:
+            from backend.plus.dependencies.models import plus_metadata as _dep_meta
+            _dep_meta.create_all(_engine, checkfirst=True)
+            logger.debug("PROJ-96: vm_dependencies-Tabelle sichergestellt")
+        except Exception as _e:
+            logger.warning("PROJ-96: dependencies create_all fehlgeschlagen: %s", _e)
 
 
 # ── PlusActiveBehavior: dynamisch aus verfügbaren Mixins komponiert ─────────

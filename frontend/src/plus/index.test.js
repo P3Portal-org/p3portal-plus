@@ -205,12 +205,30 @@ describe('PlusComponents Registry (PROJ-43)', () => {
     expect(PlusComponents.OrphanStacksTab.$$typeof).toBeDefined()
   })
 
+  it('registers PackerEditorTab as a lazy component (PROJ-92)', () => {
+    expect(PlusComponents.PackerEditorTab).toBeTypeOf('object')
+    expect(PlusComponents.PackerEditorTab.$$typeof).toBeDefined()
+  })
+
+  it('registers AnsibleEditorTab as a lazy component (PROJ-93)', () => {
+    expect(PlusComponents.AnsibleEditorTab).toBeTypeOf('object')
+    expect(PlusComponents.AnsibleEditorTab.$$typeof).toBeDefined()
+  })
+
+  it('registers VM-dependency components as lazy (PROJ-96)', () => {
+    expect(PlusComponents.VmDependencySection).toBeTypeOf('object')
+    expect(PlusComponents.VmDependencySection.$$typeof).toBeDefined()
+    expect(PlusComponents.OrphanDependenciesTab).toBeTypeOf('object')
+    expect(PlusComponents.OrphanDependenciesTab.$$typeof).toBeDefined()
+  })
+
   it('exposes only the migrated Plus components', () => {
     expect(Object.keys(PlusComponents).sort()).toEqual([
       'AddNodeCard',
       'AlertPresetsTab',
       'AlertSmtpSection',
       'AllowedPlaybooksSection',
+      'AnsibleEditorTab',
       'ApiKeyMaxCountField',
       'ApprovalPendingPage',
       'ApprovalRulesAdminPage',
@@ -227,7 +245,9 @@ describe('PlusComponents Registry (PROJ-43)', () => {
       'NativeSnapshotBadgeMap',
       'NodeDeleteButton',
       'NodeSetDefaultButton',
+      'OrphanDependenciesTab',
       'OrphanStacksTab',
+      'PackerEditorTab',
       'PlaybookPermissionsPage',
       'PlaybookPermissionsTab',
       'PoolSelectorField',
@@ -244,8 +264,11 @@ describe('PlusComponents Registry (PROJ-43)', () => {
       'ThemeEditor',
       'ThemeRowEditButton',
       'ThemesAdminActions',
+      'TopologyTab',
+      'TopologyWidget',
       'UseApprovalCountHost',
       'VmAlertPresetSection',
+      'VmDependencySection',
     ])
   })
 })

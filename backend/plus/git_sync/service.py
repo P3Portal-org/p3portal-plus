@@ -409,8 +409,12 @@ async def create_sync_log(repo_type: str, triggered_by: str) -> int:
                 log_detail=None,
             )
         )
+        # inserted_primary_key statt cursor.lastrowid: SQLAlchemy übersetzt das
+        # bei einem Core-Insert auf PostgreSQL zu RETURNING, auf SQLite zu
+        # lastrowid – asyncpg-kompatibel (S562/S588).
+        new_id = result.inserted_primary_key[0]
         await db.commit()
-        return result.lastrowid
+        return new_id
 
 
 async def finish_sync_log(

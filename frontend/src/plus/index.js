@@ -132,6 +132,34 @@ export const PlusComponents = {
   StackEditorPage: lazy(() => import('./Stacks/StackEditorPage')),
   StackDetailPage: lazy(() => import('./Stacks/StackDetailPage')),
   OrphanStacksTab: lazy(() => import('./Stacks/OrphanStacksTab')),
+  // PROJ-75: Cluster-Topologie-Ansicht (Plus-only).
+  // TopologyWidget: auf-/zuklappbares Dashboard-Widget (Compute kompakt).
+  // TopologyTab: Vollbild-Ansicht (?tab=topology) mit Compute/Netz-Toggle.
+  // reactflow + @dagrejs/dagre liegen im Lazy-Chunk dieser beiden Einträge
+  // (kein Core-Bundle-Leak). Sub-Komponenten (Graph/Knoten/Panel/Filter) werden
+  // Plus→Plus direkt importiert → keine eigenen Registry-Einträge.
+  TopologyWidget: lazy(() => import('./Topology/TopologyWidget')),
+  TopologyTab: lazy(() => import('./Topology/TopologyTab')),
+  // PROJ-92: Packer Visual Editor (Plus-only).
+  // PackerEditorTab: neuer Tab in der Image Factory (?tab=build-editor),
+  // gated useCapability('packer_editor'). Sub-Komponenten (Form/Sektionen/
+  // CodeMirror) werden Plus→Plus direkt importiert → keine Registry-Einträge.
+  PackerEditorTab: lazy(() => import('./PackerEditor/PackerEditorTab')),
+
+  // PROJ-93: Ansible Visual Editor (Plus-only).
+  // AnsibleEditorTab: neuer Tab in der Automation-Seite (?tab=playbook-editor),
+  // gated useCapability('ansible_editor'). Sub-Komponenten werden Plus→Plus
+  // direkt importiert → keine Registry-Einträge.
+  AnsibleEditorTab: lazy(() => import('./AnsibleEditor/AnsibleEditorTab')),
+
+  // PROJ-96: VM-Abhängigkeiten & Aktions-Impact-Warnung (Plus-only).
+  // VmDependencySection: „Abhängigkeiten"-Sektion auf der VM-Detailseite
+  //   (beide Richtungen + Anlegen/Entfernen, gated useCapability('vm_dependencies')).
+  // OrphanDependenciesTab: „Verwaiste Abhängigkeiten"-Tab in System Settings
+  //   (manage_dependencies). Die Topologie-Abhängigkeits-Sicht ist Teil von
+  //   TopologyTab (Plus→Plus) und braucht keinen eigenen Registry-Eintrag.
+  VmDependencySection: lazy(() => import('./Dependencies/VmDependencySection')),
+  OrphanDependenciesTab: lazy(() => import('./Dependencies/OrphanDependenciesTab')),
 }
 
 // PROJ-68: Conflict-Badge Hook – non-lazy export (Hook, keine Komponente).

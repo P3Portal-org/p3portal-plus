@@ -175,3 +175,54 @@ async def test_validate_request_full_invalid_structure():
     spec, canonical, errors, warnings = await validation.validate_request(req)
     assert spec is None
     assert errors
+
+
+# ── PROJ-82: extra-disk datastore semantic warning (AC-VAL-2) ─────────────────
+
+@pytest.mark.asyncio
+async def test_semantic_extra_disk_unknown_datastore_warns():
+    raw = {"name": "dbcluster", "resources": [
+        _vm(extra_disks=[{"interface": "scsi1", "size": 100, "datastore": "ghost-pool"}])]}
+    spec, errors, _ = validation.validate_structure(raw)
+    assert spec is not None and not errors
+    with patch("backend.plus.stacks.validation.plus_behavior") as pb, patch(
+        "backend.services.nodes_service.get_node_for_proxmox_name",
+        new=AsyncMock(return_value=object()),
+    ), patch(
+        "backend.plus.stacks.validation._image_storages_on_node",
+        new=AsyncMock(return_value={"local-lvm", "ceph"}),
+    ):
+        pb.can_use_pools_quotas.return_value = True
+        warnings = await validation.semantic_warnings(spec)
+    assert any("ghost-pool" in w for w in warnings)
+
+
+@pytest.mark.asyncio
+async def test_semantic_extra_disk_known_datastore_no_warn():
+    raw = {"name": "dbcluster", "resources": [
+        _vm(extra_disks=[{"interface": "scsi1", "size": 100, "datastore": "ceph"}])]}
+    spec, _, _ = validation.validate_structure(raw)
+    with patch("backend.plus.stacks.validation.plus_behavior") as pb, patch(
+        "backend.services.nodes_service.get_node_for_proxmox_name",
+        new=AsyncMock(return_value=object()),
+    ), patch(
+        "backend.plus.stacks.validation._image_storages_on_node",
+        new=AsyncMock(return_value={"local-lvm", "ceph"}),
+    ):
+        pb.can_use_pools_quotas.return_value = True
+        warnings = await validation.semantic_warnings(spec)
+    assert not any("datastore" in w for w in warnings)
+
+
+@pytest.mark.asyncio
+async def test_semantic_no_extra_disks_skips_proxmox_call():
+    raw = {"name": "dbcluster", "resources": [_vm()]}
+    spec, _, _ = validation.validate_structure(raw)
+    img = AsyncMock(return_value={"ceph"})
+    with patch("backend.plus.stacks.validation.plus_behavior") as pb, patch(
+        "backend.services.nodes_service.get_node_for_proxmox_name",
+        new=AsyncMock(return_value=object()),
+    ), patch("backend.plus.stacks.validation._image_storages_on_node", new=img):
+        pb.can_use_pools_quotas.return_value = True
+        await validation.semantic_warnings(spec)
+    img.assert_not_called()  # no extra_disks → never touches Proxmox

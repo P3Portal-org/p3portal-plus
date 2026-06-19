@@ -229,3 +229,67 @@ async def test_assert_vmids_free_own_vmid_excluded():
          patch("backend.plus.stacks.deployments.list_deployed_resources",
                AsyncMock(return_value=[{"vmid": 101}])):
         await ds.assert_explicit_vmids_free(1, _node(), spec)  # no raise
+
+
+# ── PROJ-82: destructive disk-change diff (state pull → diff) ─────────────────
+
+import json as _json  # noqa: E402
+
+
+def _disk_spec(extra_disks=None, disk=32):
+    return StackSpec(name="dbstack", resources=[
+        VMResource(name="db", node="pve", template="deb12", disk=disk,
+                   extra_disks=extra_disks or [])])
+
+
+@pytest.mark.asyncio
+async def test_compute_destructive_no_deployed_resources_skips_state_pull():
+    spec = _disk_spec(extra_disks=[{"interface": "scsi1", "size": 100, "datastore": "ceph"}])
+    run = AsyncMock()
+    with patch.object(ds, "list_deployed_resources", AsyncMock(return_value=[])), \
+         patch.object(ds.engine, "run_tofu", run):
+        out = await ds._compute_destructive_disk_changes(1, spec, _node())
+    assert out == []
+    run.assert_not_called()  # nothing deployed → no tofu call
+
+
+@pytest.mark.asyncio
+async def test_compute_destructive_detects_removed_disk():
+    # Deployed scsi0+scsi1; new spec keeps only root → scsi1 removed = data loss
+    spec = _disk_spec(extra_disks=[])
+    state = _json.dumps({"resources": [
+        {"type": "proxmox_virtual_environment_vm", "name": "db", "instances": [
+            {"attributes": {"vm_id": 1, "disk": [
+                {"interface": "scsi0", "size": 32},
+                {"interface": "scsi1", "size": 100},
+            ]}}]}]})
+    with patch.object(ds, "list_deployed_resources",
+                      AsyncMock(return_value=[{"resource_name": "db", "vmid": 1}])), \
+         patch.object(ds.engine, "run_tofu", AsyncMock(return_value=(0, state, ""))):
+        out = await ds._compute_destructive_disk_changes(1, spec, _node())
+    assert len(out) == 1
+    assert out[0].interface == "scsi1" and out[0].reason == "removed"
+
+
+@pytest.mark.asyncio
+async def test_compute_destructive_pure_add_is_empty():
+    # Deployed root only; new spec adds scsi1 → non-destructive
+    spec = _disk_spec(extra_disks=[{"interface": "scsi1", "size": 100, "datastore": "ceph"}])
+    state = _json.dumps({"resources": [
+        {"type": "proxmox_virtual_environment_vm", "name": "db", "instances": [
+            {"attributes": {"vm_id": 1, "disk": [{"interface": "scsi0", "size": 32}]}}]}]})
+    with patch.object(ds, "list_deployed_resources",
+                      AsyncMock(return_value=[{"resource_name": "db", "vmid": 1}])), \
+         patch.object(ds.engine, "run_tofu", AsyncMock(return_value=(0, state, ""))):
+        out = await ds._compute_destructive_disk_changes(1, spec, _node())
+    assert out == []
+
+
+@pytest.mark.asyncio
+async def test_compute_destructive_state_pull_failure_is_empty():
+    spec = _disk_spec(extra_disks=[{"interface": "scsi1", "size": 100, "datastore": "ceph"}])
+    with patch.object(ds, "list_deployed_resources",
+                      AsyncMock(return_value=[{"resource_name": "db", "vmid": 1}])), \
+         patch.object(ds.engine, "run_tofu", AsyncMock(return_value=(1, "", "boom"))):
+        out = await ds._compute_destructive_disk_changes(1, spec, _node())
+    assert out == []

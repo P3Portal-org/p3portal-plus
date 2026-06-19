@@ -221,10 +221,10 @@ def _migrate_portal_config_keys(conn, text) -> None:
             ON CONFLICT DO NOTHING
         """),
         {
-            "enabled":    1 if enabled else 0,
+            "enabled":    bool(enabled),
             "gid":        group_id,
             "exp":        exp_hours,
-            "self_appr":  1 if self_approval else 0,
+            "self_appr":  bool(self_approval),
             "now":        now,
         },
     )

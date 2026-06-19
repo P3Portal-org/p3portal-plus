@@ -8,7 +8,9 @@
 // p3portal.org
 // PROJ-76 Phase 1: React-Query-Hooks für Stacks.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getNodeVmOptions } from '../../api/cluster'
+import { getNodeVmOptions, getLxcTemplates } from '../../api/cluster'
+import { listImageStorages } from '../../api/vms'
+import { listRefs, listMacros, listSecurityGroups } from '../../api/firewall'
 import {
   fetchStacks,
   fetchStack,
@@ -23,6 +25,8 @@ import {
   fetchDrift,
   fetchDeployments,
   fetchLiveResources,
+  getCloudInit,
+  putCloudInit,
 } from './api'
 
 // PROJ-76: Bridges/CPU-Typen/Tags eines Nodes (für die VM-Karten-Dropdowns).
@@ -33,6 +37,58 @@ export function useNodeVmOptions(node) {
     queryFn: () => getNodeVmOptions(node),
     enabled: !!node,
     staleTime: 5 * 60_000,
+  })
+}
+
+// PROJ-82: image-fähige Datastores eines Nodes (Datastore-Dropdown der Zusatz-
+// Disks). Wiederverwendet den PROJ-81-Endpoint (admin→operator→viewer-Kette);
+// bei fehlenden Rechten/offline liefert die Query nichts → Freitext-Fallback.
+export function useImageStorages(node) {
+  return useQuery({
+    queryKey: ['stack-image-storages', node],
+    queryFn: () => listImageStorages(node),
+    enabled: !!node,
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+}
+
+// PROJ-86: installierte LXC-Templates (ostemplate-Tarballs) für das Container-
+// Template-Dropdown. Reuse des PROJ-38-Endpoints `/api/cluster/lxc-templates`
+// (Multi-Node-Fan-out); die LXC-Karte filtert `installed` node-abhängig und
+// mappt auf die `volid`-File-ID (= bpg `template_file_id`). Freitext-Fallback
+// bei fehlenden Rechten/offline.
+export function useLxcTemplates() {
+  return useQuery({
+    queryKey: ['stack-lxc-templates'],
+    queryFn: getLxcTemplates,
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+}
+
+// PROJ-91: Firewall-Editor-Daten (cluster-weit, best-effort) für die Regel-
+// Dropdowns: Aliases/IPSets (refs), Macros, bestehende Security-Group-Namen.
+// `installation=null` → Default-Node. Bei fehlenden Rechten/offline liefert die
+// Query leere Listen → Freitext-Fallback (kein Editor-Block). Wird genau einmal
+// im Editor geladen und an die Karten durchgereicht.
+export function useStackFirewallRefs() {
+  return useQuery({
+    queryKey: ['stack-firewall-refs'],
+    queryFn: async () => {
+      const [refs, macros, sgs] = await Promise.all([
+        listRefs(null).catch(() => []),
+        listMacros(null).catch(() => []),
+        listSecurityGroups(null).catch(() => ({ items: [] })),
+      ])
+      return {
+        refs: Array.isArray(refs) ? refs : [],
+        macros: Array.isArray(macros) ? macros : [],
+        clusterSgNames: (sgs?.items ?? []).map((g) => g.group).filter(Boolean),
+      }
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
   })
 }
 
@@ -163,6 +219,33 @@ export function useDestroyStack() {
       qc.invalidateQueries({ queryKey: ['stack', id] })
       qc.invalidateQueries({ queryKey: ['stacks'] })
       qc.invalidateQueries({ queryKey: ['stack-deployments', id] })
+    },
+  })
+}
+
+// ── PROJ-85: Cloud-Init-Login ──────────────────────────────────────────────
+
+/**
+ * Cloud-Init-Konfig eines Stacks (Default + Overrides). `enabled: !!id` →
+ * neue (noch nicht gespeicherte) Stacks fragen nichts ab. Liegt im eigenen
+ * Store (nicht im YAML), daher eigene Query-Key + kurze staleTime.
+ */
+export function useStackCloudInit(id) {
+  return useQuery({
+    queryKey: ['stack-cloud-init', id],
+    queryFn: () => getCloudInit(id),
+    enabled: !!id,
+    staleTime: 30_000,
+  })
+}
+
+/** Voll-Ersatz der Cloud-Init-Konfig; invalidiert die eigene Query (Banner). */
+export function usePutStackCloudInit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }) => putCloudInit(id, body),
+    onSuccess: (data, { id }) => {
+      qc.setQueryData(['stack-cloud-init', id], data)
     },
   })
 }

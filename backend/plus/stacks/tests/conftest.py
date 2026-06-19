@@ -32,6 +32,7 @@ async def stack_db():
         m.stacks.create(eng, checkfirst=True)
         m.stack_resources.create(eng, checkfirst=True)
         m.stack_versions.create(eng, checkfirst=True)
+        m.stack_cloud_init.create(eng, checkfirst=True)  # PROJ-85
 
     # Seed two local users for owner/orphan tests
     async with get_db() as db:

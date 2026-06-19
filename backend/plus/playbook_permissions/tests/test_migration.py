@@ -63,7 +63,8 @@ def _portal_config_has_key(engine, key: str) -> bool:
 def _insert_portal_config(engine, key: str, value: str):
     with engine.connect() as conn:
         conn.execute(
-            text("INSERT OR REPLACE INTO portal_config (key, value) VALUES (:k, :v)"),
+            text("INSERT INTO portal_config (key, value) VALUES (:k, :v) "
+                 "ON CONFLICT (key) DO UPDATE SET value=excluded.value"),
             {"k": key, "v": value},
         )
         conn.commit()

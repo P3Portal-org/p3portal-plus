@@ -75,23 +75,23 @@ def test_transpile_field_mapping():
     assert block["node_name"] == "pve"
     assert block["cpu"] == {"cores": 4, "sockets": 2, "type": "x86-64-v2"}
     assert block["memory"]["dedicated"] == 4096
-    assert block["disk"]["size"] == 50
-    assert block["network_device"]["bridge"] == "vmbr1"
-    assert block["network_device"]["vlan_id"] == 42
+    assert block["disk"][0]["size"] == 50
+    assert block["network_device"][0]["bridge"] == "vmbr1"
+    assert block["network_device"][0]["vlan_id"] == 42
     assert block["tags"] == ["web", "prod"]
     assert block["pool_id"] == "mypool"
     assert block["started"] is False
 
 
-def test_transpile_agent_default_disabled():
-    # Default agent=False → bpg won't wait for the guest agent (fast deploy)
+def test_transpile_agent_default_enabled():
+    # Default agent=True → full Proxmox agent integration (IP display, graceful shutdown)
     block = stack_to_tfjson(_spec(), {"deb12": 9000})["resource"]["proxmox_virtual_environment_vm"]["web"]
-    assert block["agent"] == {"enabled": False}
-
-
-def test_transpile_agent_enabled_when_opted_in():
-    block = stack_to_tfjson(_spec(agent=True), {"deb12": 9000})["resource"]["proxmox_virtual_environment_vm"]["web"]
     assert block["agent"] == {"enabled": True}
+
+
+def test_transpile_agent_disabled_when_opted_out():
+    block = stack_to_tfjson(_spec(agent=False), {"deb12": 9000})["resource"]["proxmox_virtual_environment_vm"]["web"]
+    assert block["agent"] == {"enabled": False}
 
 
 def test_transpile_provider_has_no_inline_creds():

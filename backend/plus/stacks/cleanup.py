@@ -33,8 +33,8 @@ async def on_user_deleted_stacks(user_id: int) -> int:
     async with get_db() as db:
         result = await db.execute(
             text(
-                "UPDATE stacks SET is_orphan = 1, orphaned_at = :now, updated_at = :now "
-                "WHERE owner_user_id = :uid AND deleted_at IS NULL AND is_orphan = 0"
+                "UPDATE stacks SET is_orphan = true, orphaned_at = :now, updated_at = :now "
+                "WHERE owner_user_id = :uid AND deleted_at IS NULL AND is_orphan = false"
             ),
             {"now": now, "uid": user_id},
         )

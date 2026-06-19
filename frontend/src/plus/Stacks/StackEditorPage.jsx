@@ -15,7 +15,7 @@ import jsyaml from 'js-yaml'
 import { useCapability } from '../../hooks/useCapability'
 import { formatApiError } from '../../api/errors'
 import { getNodes, getProxmoxTemplates } from '../../api/cluster'
-import { useInvalidateStacks } from './hooks'
+import { useInvalidateStacks, useStackCloudInit, useStackFirewallRefs } from './hooks'
 import {
   createStack,
   updateStack,
@@ -27,7 +27,10 @@ import StackYamlEditor from './StackYamlEditor'
 import StackFormEditor from './StackFormEditor'
 import StackPreviewModal from './StackPreviewModal'
 import StackEtagConflictModal from './StackEtagConflictModal'
+import StackCloudInitTab from './StackCloudInitTab'
+import CloudInitHintBanner from './CloudInitHintBanner'
 import Watermark from '../../components/common/Watermark'
+import HelpButton from '../../features/help/components/HelpButton'
 
 const NEW_TEMPLATE = `name: my-stack
 version: "1.0.0"
@@ -50,21 +53,30 @@ function stripUndefined(obj) {
 
 function modelFromYaml(text) {
   const obj = jsyaml.load(text)
-  if (!obj || typeof obj !== 'object') return { name: '', description: '', version: '1.0.0', resources: [] }
+  if (!obj || typeof obj !== 'object') return { name: '', description: '', version: '1.0.0', resources: [], networks: [] }
   return {
     name: obj.name ?? '',
     description: obj.description ?? '',
     version: obj.version ?? '1.0.0',
     resources: Array.isArray(obj.resources) ? obj.resources : [],
+    // PROJ-87: stack-owned Netze (Bridge/VNet) – ohne Sonderfall durch den Sync.
+    networks: Array.isArray(obj.networks) ? obj.networks : [],
+    // PROJ-91: stack-eigene Security-Groups – ebenfalls durch den Sync getragen.
+    security_groups: Array.isArray(obj.security_groups) ? obj.security_groups : [],
   }
 }
 
 function yamlFromModel(model) {
+  const networks = (model.networks || []).map(stripUndefined)
+  const securityGroups = (model.security_groups || []).map(stripUndefined)
   const clean = {
     name: model.name || '',
     version: model.version || '1.0.0',
     ...(model.description ? { description: model.description } : {}),
     resources: (model.resources || []).map(stripUndefined),
+    // Nur emittieren, wenn vorhanden → reine VM/LXC-Stacks bleiben byte-genau.
+    ...(networks.length ? { networks } : {}),
+    ...(securityGroups.length ? { security_groups: securityGroups } : {}),
   }
   return jsyaml.dump(clean, { lineWidth: 120, noRefs: true })
 }
@@ -79,7 +91,7 @@ export default function StackEditorPage() {
   // VMID-Vorschläge aus dem Plan-Modal ("Nächste freie IDs wählen") – einmal anwenden.
   const vmidSuggestionsRef = useRef(location.state?.vmidSuggestions || null)
 
-  const [mode, setMode] = useState('yaml')          // 'yaml' | 'form'
+  const [mode, setMode] = useState('form')          // 'form' | 'yaml' | 'cloudinit' — Formular ist Default (AC-UI-3)
   const [yamlText, setYamlText] = useState(isEdit ? '' : NEW_TEMPLATE)
   const [loading, setLoading] = useState(isEdit)
   const [loadError, setLoadError] = useState(null)
@@ -100,6 +112,13 @@ export default function StackEditorPage() {
   const [templateOptions, setTemplateOptions] = useState([])
 
   const invalidate = useInvalidateStacks()
+
+  // PROJ-85: Cloud-Init-Konfig (eigener Store, nur Edit) — für Tab + Hinweis-Banner.
+  const { data: cloudInit } = useStackCloudInit(isEdit ? id : null)
+
+  // PROJ-91: Firewall-Editor-Daten (Aliases/IPSets/Macros/Cluster-SGs) für die
+  // Regel-Dropdowns. Best-effort, leer → Freitext-Fallback.
+  const { data: fwData } = useStackFirewallRefs()
 
   // ETag-Concurrency-State (Edit-Modus).
   const expectedEtagRef = useRef(null)   // ETag, mit dem der Editor geöffnet wurde
@@ -268,6 +287,7 @@ export default function StackEditorPage() {
           <h1 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
             {isEdit ? t('stacks.editor.title_edit') : t('stacks.editor.title_new')}
           </h1>
+          <HelpButton helpKey="stacks.editor" />
         </div>
       </header>
       <main className="flex-1 overflow-y-auto px-6 py-6 space-y-4 bg-transparent">
@@ -279,9 +299,22 @@ export default function StackEditorPage() {
           <>
             {/* Tab toggle */}
             <div className="flex border-b border-portal-border">
-              <button className={tabCls('yaml')} onClick={() => setMode('yaml')}>{t('stacks.editor.tab_yaml')}</button>
               <button className={tabCls('form')} onClick={() => setMode('form')}>{t('stacks.editor.tab_form')}</button>
+              <button className={tabCls('yaml')} onClick={() => setMode('yaml')}>{t('stacks.editor.tab_yaml')}</button>
+              <button className={tabCls('cloudinit')} onClick={() => setMode('cloudinit')}>{t('stacks.editor.tab_cloudinit')}</button>
             </div>
+
+            {mode === 'cloudinit' ? (
+              <StackCloudInitTab
+                stackId={isEdit ? Number(id) : null}
+                resources={(model.resources || [])
+                  .filter((r) => r?.name)
+                  .map((r) => ({ name: r.name, type: r.type === 'lxc' ? 'lxc' : 'vm' }))}
+              />
+            ) : (
+            <>
+            {/* PROJ-85: Hinweis, dass der Login im Cloud-Init-Tab liegt (AC-UI-2) */}
+            <CloudInitHintBanner data={cloudInit} />
 
             {/* Editor body */}
             <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700">
@@ -301,6 +334,9 @@ export default function StackEditorPage() {
                     onChange={handleModelChange}
                     nodeOptions={nodeOptions}
                     templateOptions={templateOptions}
+                    fwRefs={fwData?.refs || []}
+                    fwMacros={fwData?.macros || []}
+                    clusterSgNames={fwData?.clusterSgNames || []}
                   />
                 </div>
               )}
@@ -361,6 +397,8 @@ export default function StackEditorPage() {
                 {saving ? t('common.loading') : t('stacks.editor.save_btn')}
               </button>
             </div>
+            </>
+            )}
           </>
         )}
 

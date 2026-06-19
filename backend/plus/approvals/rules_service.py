@@ -114,7 +114,7 @@ async def update_workflow_config(
         params["exp"] = default_expiration_hours
     if allow_self_approval_global is not None:
         set_parts.append("allow_self_approval_global = :sa")
-        params["sa"] = 1 if allow_self_approval_global else 0
+        params["sa"] = bool(allow_self_approval_global)
     sql = f"UPDATE approval_workflow_config SET {', '.join(set_parts)} WHERE id=1"
     async with get_db() as db:
         await db.execute(text(sql), params)

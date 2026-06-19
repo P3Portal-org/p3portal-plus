@@ -62,12 +62,13 @@ async def _enable_workflow():
     async with get_db() as db:
         await db.execute(
             text("""
-                INSERT OR IGNORE INTO approval_workflow_config
+                INSERT INTO approval_workflow_config
                     (id, enabled, default_expiration_hours, allow_self_approval_global)
-                VALUES (1, 0, 48, 0)
+                VALUES (1, false, 48, false)
+                ON CONFLICT DO NOTHING
             """)
         )
-        await db.execute(text("UPDATE approval_workflow_config SET enabled=1 WHERE id=1"))
+        await db.execute(text("UPDATE approval_workflow_config SET enabled=true WHERE id=1"))
         await db.commit()
 
 

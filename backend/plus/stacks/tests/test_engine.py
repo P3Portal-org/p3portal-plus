@@ -153,6 +153,47 @@ def test_mask_line_redacts_secret():
     assert _mask_line("line", None) == "line"
 
 
+def test_mask_line_redacts_extra_secrets():
+    """PROJ-85 OBS-1: cloud-init passwords are masked too (defense-in-depth)."""
+    from backend.plus.stacks.engine import _mask_line
+    # Token + cloud-init password both masked in the same line.
+    line = "user=ops password=ci-pw-123 token=tok-abc"
+    out = _mask_line(line, "tok-abc", ["ci-pw-123"])
+    assert "ci-pw-123" not in out
+    assert "tok-abc" not in out
+    assert out.count("***") == 2
+    # Empty/None extra list is a no-op; None token still fine.
+    assert _mask_line("ci-pw-123", None, []) == "ci-pw-123"
+    assert _mask_line("ci-pw-123", None, ["ci-pw-123"]) == "***"
+
+
 def test_cancel_tofu_no_running_process():
     from backend.plus.stacks.engine import cancel_tofu
     assert cancel_tofu("nonexistent-stack") is False
+
+
+# ── PROJ-66 Phase 2: provider-mirror presence helper ──────────────────────────
+
+def test_tofu_provider_mirror_constant_matches_dockerfile():
+    # Single source for the mirror path; mirrors Dockerfile /opt/tofu/plugin-mirror.
+    assert engine.TOFU_PROVIDER_MIRROR == "/opt/tofu/plugin-mirror"
+
+
+def test_mirror_present_true_when_dir_nonempty(tmp_path, monkeypatch):
+    mirror = tmp_path / "plugin-mirror"
+    mirror.mkdir()
+    (mirror / "registry.terraform.io").mkdir()
+    monkeypatch.setattr(engine, "TOFU_PROVIDER_MIRROR", str(mirror))
+    assert engine.tofu_provider_mirror_present() is True
+
+
+def test_mirror_present_false_when_empty(tmp_path, monkeypatch):
+    mirror = tmp_path / "plugin-mirror"
+    mirror.mkdir()
+    monkeypatch.setattr(engine, "TOFU_PROVIDER_MIRROR", str(mirror))
+    assert engine.tofu_provider_mirror_present() is False
+
+
+def test_mirror_present_false_when_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(engine, "TOFU_PROVIDER_MIRROR", str(tmp_path / "does-not-exist"))
+    assert engine.tofu_provider_mirror_present() is False
