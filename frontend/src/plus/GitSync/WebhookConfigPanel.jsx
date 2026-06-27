@@ -70,7 +70,7 @@ export default function WebhookConfigPanel({ repoType, hasToken }) {
               {copied ? t('common.copied') : t('common.copy')}
             </button>
           </div>
-          <p className="text-[11px] text-yellow-600 dark:text-yellow-400">
+          <p className="text-[11px] text-portal-warn">
             {t('git_sync.webhook_save_hint')}
           </p>
           <div className="flex items-center gap-2">
@@ -85,8 +85,8 @@ export default function WebhookConfigPanel({ repoType, hasToken }) {
               disabled={loading}
               className={`text-xs px-2.5 py-1.5 rounded transition-colors ${
                 confirmRegen
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'border border-gray-200 dark:border-zinc-700 text-gray-400 hover:border-orange-400 hover:text-orange-500 dark:text-zinc-500'
+                  ? 'bg-portal-danger hover:bg-portal-danger text-white'
+                  : 'border border-gray-200 dark:border-zinc-700 text-gray-400 hover:border-portal-accent/50 hover:text-portal-accent dark:text-zinc-500'
               }`}
             >
               {loading ? '…' : confirmRegen ? t('git_sync.webhook_regen_confirm') : t('git_sync.webhook_regen_btn')}
@@ -104,7 +104,7 @@ export default function WebhookConfigPanel({ repoType, hasToken }) {
         </button>
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-portal-danger">{error}</p>}
     </div>
   )
 }

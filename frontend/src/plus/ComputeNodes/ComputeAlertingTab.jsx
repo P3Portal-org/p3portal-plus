@@ -12,15 +12,15 @@ import { fetchNodes } from '../../api/nodes'
 import { listGlobalRules, listAlertStates } from '../../api/alerts'
 
 const SEV_STYLE = {
-  critical: { dot: 'bg-red-500',    text: 'text-red-700 dark:text-red-400',       label: 'Kritisch' },
-  warning:  { dot: 'bg-yellow-500', text: 'text-yellow-700 dark:text-yellow-400', label: 'Warnung' },
+  critical: { dot: 'bg-portal-danger',    text: 'text-portal-danger',       label: 'Kritisch' },
+  warning:  { dot: 'bg-portal-warn', text: 'text-portal-warn', label: 'Warnung' },
 }
 
 function PlusGate() {
   return (
     <div className="py-10 flex flex-col items-center gap-3 text-center">
-      <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
-        <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="w-10 h-10 rounded-full bg-portal-accent/10 flex items-center justify-center">
+        <svg className="w-5 h-5 text-portal-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       </div>
@@ -112,7 +112,7 @@ export default function ComputeAlertingTab({ nodeName, active }) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+      <div className="rounded-lg border border-portal-danger/30 bg-portal-danger/10 px-4 py-3 text-sm text-portal-danger">
         {error}
       </div>
     )
@@ -127,7 +127,7 @@ export default function ComputeAlertingTab({ nodeName, active }) {
           {states.map(s => {
             const sty = SEV_STYLE[s.severity] ?? SEV_STYLE.warning
             return (
-              <div key={`${s.rule_id}-${s.vmid}-${s.severity}`} className="flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/30">
+              <div key={`${s.rule_id}-${s.vmid}-${s.severity}`} className="flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg border border-portal-warn/30 bg-portal-warn/10">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${sty.dot}`} />
                 <span className={`text-xs font-medium ${sty.text}`}>{sty.label}</span>
                 <span className="text-xs text-gray-700 dark:text-zinc-300">{s.rule_name}</span>

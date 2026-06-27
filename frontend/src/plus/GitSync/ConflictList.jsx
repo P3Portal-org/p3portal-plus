@@ -66,7 +66,7 @@ function ConflictItem({ conflict, onResolved }) {
           </button>
         </div>
       </div>
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-xs text-portal-danger">{error}</p>}
     </div>
   )
 }
@@ -79,15 +79,15 @@ export default function ConflictList({ conflicts, allConflicts, onResolved }) {
   const openConflicts = conflicts // prop already filtered to open only
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-yellow-300 dark:border-yellow-700 rounded-lg overflow-hidden">
+    <div className="bg-white dark:bg-zinc-900 border border-portal-warn/30 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0">
+      <div className="px-4 py-3 bg-portal-warn/10 border-b border-portal-warn/30 flex items-center gap-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-portal-warn shrink-0">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
           <line x1="12" y1="9" x2="12" y2="13" />
           <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
-        <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">
+        <p className="text-sm font-semibold text-portal-warn">
           {t('git_sync.conflicts_title', { count: openConflicts.length })}
         </p>
       </div>
@@ -119,7 +119,7 @@ export default function ConflictList({ conflicts, allConflicts, onResolved }) {
                 <div key={c.id} className="px-4 py-2.5 flex items-center gap-3 opacity-60">
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                     c.resolution === 'git'
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      ? 'bg-portal-success/10 text-portal-success'
                       : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'
                   }`}>
                     {c.resolution === 'git' ? t('git_sync.resolution_git') : t('git_sync.resolution_local')}

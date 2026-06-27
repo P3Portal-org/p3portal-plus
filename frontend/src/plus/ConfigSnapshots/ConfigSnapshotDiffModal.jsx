@@ -12,9 +12,9 @@ import { useTranslation } from 'react-i18next'
 import { fetchDiffLive, fetchDiffAB, restoreKeys } from './api'
 
 const CHANGE_ROW_STYLES = {
-  added:     'bg-green-50 dark:bg-green-900/20',
-  removed:   'bg-red-50 dark:bg-red-900/20',
-  changed:   'bg-yellow-50 dark:bg-yellow-900/20',
+  added:     'bg-portal-success/10',
+  removed:   'bg-portal-danger/10',
+  changed:   'bg-portal-warn/10',
   unchanged: '',
 }
 
@@ -172,7 +172,7 @@ export default function ConfigSnapshotDiffModal({ mode, snapshotId, snapshotIdB,
         {/* Body */}
         <div className="overflow-auto flex-1">
           {loading && <p className="p-5 text-sm text-gray-500 dark:text-zinc-400">{t('common.loading')}</p>}
-          {error && <p className="p-5 text-sm text-red-500">{error}</p>}
+          {error && <p className="p-5 text-sm text-portal-danger">{error}</p>}
           {entries && entries.length === 0 && (
             <p className="p-5 text-sm text-gray-500 dark:text-zinc-400">{t('config_snapshots.diff_no_keys')}</p>
           )}

@@ -32,7 +32,7 @@ export default function VmAlertPresetSection({ summary, presets, onAssign, onRem
         Preset-Zuweisung <PlusBadge />
       </h3>
       {assigned ? (
-        <div className="flex items-center justify-between border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 rounded-lg px-4 py-3">
+        <div className="flex items-center justify-between border border-portal-accent/30 bg-portal-accent/10 rounded-lg px-4 py-3">
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-zinc-100">{assigned.name}</p>
             {assigned.description && (
@@ -40,7 +40,7 @@ export default function VmAlertPresetSection({ summary, presets, onAssign, onRem
             )}
           </div>
           <button onClick={onRemove}
-            className="text-xs text-red-500 dark:text-red-400 hover:underline">
+            className="text-xs text-portal-danger hover:underline">
             Entfernen
           </button>
         </div>

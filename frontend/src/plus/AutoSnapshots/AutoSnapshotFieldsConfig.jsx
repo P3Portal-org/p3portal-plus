@@ -24,7 +24,7 @@ export default function AutoSnapshotFieldsConfig({ values, onChange }) {
           type="checkbox"
           checked={values.skip_if_no_changes !== false}
           onChange={(e) => onChange({ ...values, skip_if_no_changes: e.target.checked })}
-          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-orange-500 focus:ring-orange-500"
+          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-portal-accent focus:ring-portal-accent"
         />
         <label htmlFor="as-skip-if-no-changes" className="text-sm text-gray-700 dark:text-zinc-300">
           {t('auto_snapshots.config.skip_if_no_changes')}

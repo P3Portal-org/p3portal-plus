@@ -60,13 +60,13 @@ export default function AlertPresetList({ presets, onUpdate, onDelete, emptyText
               <div className="flex items-center gap-3 shrink-0">
                 <button
                   onClick={() => { setEditPreset(p); setSaveError(null) }}
-                  className="text-xs text-orange-600 dark:text-orange-400 hover:underline transition-colors"
+                  className="text-xs text-portal-accent hover:underline transition-colors"
                 >
                   Bearbeiten
                 </button>
                 <button
                   onClick={() => handleDelete(p)}
-                  className="text-xs text-red-500 dark:text-red-400 hover:underline transition-colors"
+                  className="text-xs text-portal-danger hover:underline transition-colors"
                 >
                   Löschen
                 </button>

@@ -50,7 +50,7 @@ export default function ConfigSnapshotOrphanPage({ embedded }) {
       {isLoading && <p className="text-sm text-gray-500 dark:text-zinc-400">{t('common.loading')}</p>}
       {error && (
         <div className="flex items-center gap-2">
-          <p className="text-sm text-red-500">{error?.response?.data?.detail ?? t('common.error_generic')}</p>
+          <p className="text-sm text-portal-danger">{error?.response?.data?.detail ?? t('common.error_generic')}</p>
           <button type="button" className="btn-secondary text-xs" onClick={() => refetch()}>{t('common.retry')}</button>
         </div>
       )}
@@ -106,7 +106,7 @@ export default function ConfigSnapshotOrphanPage({ embedded }) {
         </div>
       )}
 
-      {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
+      {deleteError && <p className="text-xs text-portal-danger">{deleteError}</p>}
 
       {detailId && (
         <ConfigSnapshotDetailModal

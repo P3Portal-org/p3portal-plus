@@ -24,7 +24,7 @@ export default function AutoSnapshotFieldsVm({ values, onChange }) {
           type="checkbox"
           checked={!!values.include_ram}
           onChange={(e) => onChange({ ...values, include_ram: e.target.checked })}
-          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-orange-500 focus:ring-orange-500"
+          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-portal-accent focus:ring-portal-accent"
         />
         <label htmlFor="as-include-ram" className="text-sm text-gray-700 dark:text-zinc-300">
           {t('auto_snapshots.vm.include_ram')}

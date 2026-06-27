@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { fetchSshKey, regenerateSshKey } from './api'
 import { formatApiError } from '../../api/errors'
 
-const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500'
+const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent'
 const labelCls = 'block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1'
 
 export default function AuthConfigPanel({
@@ -89,7 +89,7 @@ export default function AuthConfigPanel({
           <label className={labelCls}>
             {t('git_sync.https_token_label')}
             {config?.has_https_token && (
-              <span className="ml-2 text-[10px] text-green-600 dark:text-green-400 font-normal">
+              <span className="ml-2 text-[10px] text-portal-success font-normal">
                 {t('git_sync.token_set')}
               </span>
             )}
@@ -115,11 +115,11 @@ export default function AuthConfigPanel({
       </p>
 
       {!sshKey && !config?.ssh_public_key ? (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3 space-y-2">
-          <p className="text-xs text-yellow-700 dark:text-yellow-400">
+        <div className="bg-portal-warn/10 border border-portal-warn/30 rounded p-3 space-y-2">
+          <p className="text-xs text-portal-warn">
             {t('git_sync.ssh_no_key')}
           </p>
-          <p className="text-xs text-yellow-600 dark:text-yellow-500">
+          <p className="text-xs text-portal-warn">
             {t('git_sync.ssh_generate_hint')}
           </p>
           <button
@@ -165,14 +165,14 @@ export default function AuthConfigPanel({
               disabled={regenLoading}
               className={`text-xs px-2.5 py-1.5 rounded transition-colors ${
                 confirmRegen
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'border border-gray-200 dark:border-zinc-700 text-gray-400 hover:border-orange-400 hover:text-orange-500 dark:text-zinc-500'
+                  ? 'bg-portal-danger hover:bg-portal-danger text-white'
+                  : 'border border-gray-200 dark:border-zinc-700 text-gray-400 hover:border-portal-accent/50 hover:text-portal-accent dark:text-zinc-500'
               }`}
             >
               {regenLoading ? '…' : confirmRegen ? t('git_sync.ssh_regen_confirm') : t('git_sync.ssh_regen_btn')}
             </button>
           </div>
-          {sshError && <p className="text-xs text-red-500">{sshError}</p>}
+          {sshError && <p className="text-xs text-portal-danger">{sshError}</p>}
         </div>
       )}
       {!sshKey && config?.ssh_public_key && !sshLoading && (

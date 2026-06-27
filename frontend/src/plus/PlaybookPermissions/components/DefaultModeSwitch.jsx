@@ -68,7 +68,7 @@ export default function DefaultModeSwitch({ config, updateConfig }) {
           onClick={handleToggle}
           disabled={updateConfig.isPending}
           className={`relative inline-flex h-6 w-11 items-center rounded-full shrink-0 transition-colors focus:outline-none disabled:opacity-50 ${
-            isRestricted ? 'bg-red-500' : 'bg-green-500'
+            isRestricted ? 'bg-portal-danger' : 'bg-portal-success'
           }`}
         >
           <span
@@ -83,10 +83,10 @@ export default function DefaultModeSwitch({ config, updateConfig }) {
       <div className="flex items-center gap-2">
         <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border ${
           isRestricted
-            ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
-            : 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+            ? 'bg-portal-danger/10 text-portal-danger border-portal-danger/30'
+            : 'bg-portal-success/10 text-portal-success border-portal-success/30'
         }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${isRestricted ? 'bg-red-500' : 'bg-green-500'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${isRestricted ? 'bg-portal-danger' : 'bg-portal-success'}`} />
           {isRestricted
             ? t('playbook_permissions.mode_restricted')
             : t('playbook_permissions.mode_open')}
@@ -99,7 +99,7 @@ export default function DefaultModeSwitch({ config, updateConfig }) {
       </div>
 
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs text-portal-danger">{error}</p>
       )}
 
       {confirm && (

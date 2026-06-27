@@ -9,7 +9,7 @@
 // PROJ-77: Gemeinsame Retention- und Parallelism-Felder beider Auto-Snapshot-Types.
 import { useTranslation } from 'react-i18next'
 
-const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder-gray-400 dark:placeholder-zinc-500'
+const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent placeholder-gray-400 dark:placeholder-zinc-500'
 
 export default function AutoSnapshotFieldsBase({ values, onChange }) {
   const { t } = useTranslation()
@@ -40,7 +40,7 @@ export default function AutoSnapshotFieldsBase({ values, onChange }) {
       {/* keep_last */}
       <div>
         <label htmlFor="as-keep-last" className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          {t('auto_snapshots.retention.keep_last')} <span className="text-red-500">*</span>
+          {t('auto_snapshots.retention.keep_last')} <span className="text-portal-danger">*</span>
         </label>
         <input
           id="as-keep-last"
@@ -63,7 +63,7 @@ export default function AutoSnapshotFieldsBase({ values, onChange }) {
           type="checkbox"
           checked={!!values.gfs_enabled}
           onChange={(e) => handleGfsToggle(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-orange-500 focus:ring-orange-500"
+          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-portal-accent focus:ring-portal-accent"
         />
         <label htmlFor="as-gfs-toggle" className="text-sm text-gray-700 dark:text-zinc-300">
           {t('auto_snapshots.retention.gfs.enable')}

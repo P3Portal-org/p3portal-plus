@@ -82,7 +82,7 @@ export default function AlertPresetsTab() {
       </div>
 
       {loadError && (
-        <div className="border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/40 px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400 rounded">
+        <div className="border border-portal-warn/30 bg-portal-warn/10 px-3 py-2 text-xs text-portal-warn rounded">
           {loadError}
         </div>
       )}

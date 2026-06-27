@@ -49,7 +49,7 @@ export default function StackRestoreModal({ stackId, versionNumber, currentEtag,
           <p className="text-sm text-gray-700 dark:text-zinc-300">{t('stacks.restore.body', { v: versionNumber })}</p>
           <p className="text-xs text-portal-text3">{t('stacks.restore.note')}</p>
           {error && (
-            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-sm text-portal-danger bg-portal-danger/10 border border-portal-danger/30 rounded-lg px-3 py-2">{error}</p>
           )}
         </div>
         <div className="px-6 py-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-end gap-2">

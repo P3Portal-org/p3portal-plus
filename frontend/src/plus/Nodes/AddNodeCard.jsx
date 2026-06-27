@@ -19,7 +19,7 @@ export default function AddNodeCard({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="min-h-[140px] w-full flex flex-col items-center justify-center gap-2.5 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg text-gray-400 dark:text-zinc-500 hover:border-orange-400 dark:hover:border-orange-600 hover:text-orange-500 dark:hover:text-orange-400 transition-all group"
+      className="min-h-[140px] w-full flex flex-col items-center justify-center gap-2.5 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg text-gray-400 dark:text-zinc-500 hover:border-portal-accent/50 hover:text-portal-accent transition-all group"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-7 h-7 group-hover:scale-110 transition-transform">
         <circle cx="12" cy="12" r="9" />

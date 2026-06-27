@@ -72,7 +72,7 @@ function humanLabel(type, time, weekdays) {
   return ''
 }
 
-const cls = 'text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500'
+const cls = 'text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent'
 
 export default function CronPicker({ value, onChange, label }) {
   const init = parseCronToState(value)
@@ -104,7 +104,7 @@ export default function CronPicker({ value, onChange, label }) {
     <div className="space-y-2">
       {label && (
         <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          {label} <span className="text-red-500">*</span>
+          {label} <span className="text-portal-danger">*</span>
         </label>
       )}
 
@@ -149,7 +149,7 @@ export default function CronPicker({ value, onChange, label }) {
                 title={d.label}
                 className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
                   active
-                    ? 'bg-orange-500 text-white'
+                    ? 'bg-portal-accent text-white'
                     : 'bg-gray-100 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
                 }`}
               >

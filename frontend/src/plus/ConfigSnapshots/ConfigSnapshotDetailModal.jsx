@@ -60,7 +60,7 @@ export default function ConfigSnapshotDetailModal({ snapshotId, onClose }) {
 
         <div className="overflow-auto flex-1 p-5">
           {loading && <p className="text-sm text-gray-500 dark:text-zinc-400">{t('common.loading')}</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-portal-danger">{error}</p>}
           {detail && (
             <div className="space-y-4">
               {detail.note && (

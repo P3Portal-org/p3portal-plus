@@ -112,7 +112,7 @@ export default function ApprovalRuleFormModal({ rule, onClose }) {
             {isNew && maxApprovalRules !== null && (
               <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
                 atLimit
-                  ? 'bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400'
+                  ? 'bg-portal-danger/10 text-portal-danger'
                   : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'
               }`}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3 h-3 shrink-0">

@@ -43,7 +43,7 @@ export default function NodeSetDefaultButton({ node, onRefresh, onError }) {
     <button
       onClick={handleClick}
       disabled={busy}
-      className="text-xs text-gray-400 dark:text-zinc-500 hover:text-orange-500 transition-colors disabled:opacity-50"
+      className="text-xs text-gray-400 dark:text-zinc-500 hover:text-portal-accent transition-colors disabled:opacity-50"
     >
       {t('admin.nodes.set_default')}
     </button>

@@ -24,7 +24,7 @@ function OwnerlessBadge() {
   return (
     <span
       title="Kein Owner zugewiesen"
-      className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 font-medium whitespace-nowrap"
+      className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-portal-warn/10 text-portal-warn border border-portal-warn/30 font-medium whitespace-nowrap"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-2.5 h-2.5">
         <circle cx="12" cy="8" r="4" />
@@ -42,12 +42,12 @@ function QuotaCell({ used, quota }) {
   const over = used > quota
   return (
     <div className="min-w-[4rem]">
-      <div className={`text-xs mb-0.5 ${over ? 'text-red-500 font-medium' : 'text-gray-600 dark:text-zinc-400'}`}>
+      <div className={`text-xs mb-0.5 ${over ? 'text-portal-danger font-medium' : 'text-gray-600 dark:text-zinc-400'}`}>
         {used}/{quota}
       </div>
       <div className="h-1 bg-gray-100 dark:bg-zinc-700 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full ${over ? 'bg-red-500' : pct > 80 ? 'bg-amber-500' : 'bg-orange-400'}`}
+          className={`h-full rounded-full ${over ? 'bg-portal-danger' : pct > 80 ? 'bg-portal-warn' : 'bg-portal-accent'}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -92,7 +92,7 @@ export default function PoolsPage({ embedded = false }) {
 
       {/* Core-edition banner (new pools blocked, existing pools still work) */}
       {!isPlus && pools.length > 0 && (
-        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg px-4 py-2.5">
+        <div className="flex items-center gap-2 text-xs text-portal-warn bg-portal-warn/10 border border-portal-warn/30 rounded-lg px-4 py-2.5">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 shrink-0">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
             <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
@@ -110,7 +110,7 @@ export default function PoolsPage({ embedded = false }) {
             value={filters.search}
             onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
             placeholder={t('pools.search_placeholder')}
-            className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
           />
         </div>
 
@@ -122,7 +122,7 @@ export default function PoolsPage({ embedded = false }) {
             onChange={e => setTagFilterInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') applyTagFilter() }}
             placeholder={t('pools.tag_filter_placeholder')}
-            className="text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400 w-36"
+            className="text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent w-36"
           />
           <button
             onClick={applyTagFilter}
@@ -138,7 +138,7 @@ export default function PoolsPage({ embedded = false }) {
             type="checkbox"
             checked={filters.no_owner}
             onChange={e => setFilters(f => ({ ...f, no_owner: e.target.checked }))}
-            className="rounded border-gray-300 dark:border-zinc-600 text-orange-500 focus:ring-orange-400"
+            className="rounded border-gray-300 dark:border-zinc-600 text-portal-accent focus:ring-portal-accent"
           />
           {t('pools.filter_no_owner')}
         </label>
@@ -179,7 +179,7 @@ export default function PoolsPage({ embedded = false }) {
         {loading ? (
           <p className="text-sm text-gray-500 dark:text-zinc-500 py-10 text-center">{t('common.loading')}</p>
         ) : error ? (
-          <p className="text-sm text-red-400 py-10 text-center">{error}</p>
+          <p className="text-sm text-portal-danger py-10 text-center">{error}</p>
         ) : pools.length === 0 ? (
           <div className="py-14 text-center">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.25} className="w-10 h-10 mx-auto text-gray-300 dark:text-zinc-600 mb-3">
@@ -193,7 +193,7 @@ export default function PoolsPage({ embedded = false }) {
             {!hasActiveFilter && canCreate && (
               <button
                 onClick={() => setModal('create')}
-                className="mt-3 text-sm text-orange-500 hover:text-orange-700 transition-colors"
+                className="mt-3 text-sm text-portal-accent hover:text-portal-accent transition-colors"
               >
                 {t('pools.create_first')}
               </button>
@@ -203,14 +203,14 @@ export default function PoolsPage({ embedded = false }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-zinc-800/50 text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <th className="px-4 py-3 text-left">{t('pools.col_name')}</th>
-                  <th className="px-4 py-3 text-left hidden sm:table-cell">{t('pools.col_tags')}</th>
-                  <th className="px-4 py-3 text-center">{t('pools.col_members')}</th>
-                  <th className="px-4 py-3 text-left hidden md:table-cell">{t('pools.col_quota_vms')}</th>
-                  <th className="px-4 py-3 text-left hidden lg:table-cell">{t('pools.col_quota_cpu')}</th>
-                  <th className="px-4 py-3 text-left hidden lg:table-cell">{t('pools.col_quota_ram')}</th>
-                  <th className="px-4 py-3 text-left hidden xl:table-cell">{t('pools.col_created')}</th>
+                <tr className="border-b border-gray-200 dark:border-zinc-700">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_name')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500 hidden sm:table-cell">{t('pools.col_tags')}</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_members')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500 hidden md:table-cell">{t('pools.col_quota_vms')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500 hidden lg:table-cell">{t('pools.col_quota_cpu')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500 hidden lg:table-cell">{t('pools.col_quota_ram')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500 hidden xl:table-cell">{t('pools.col_created')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -233,7 +233,7 @@ export default function PoolsPage({ embedded = false }) {
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <div className="flex flex-wrap gap-1">
                         {(p.tags ?? []).slice(0, 2).map(tag => (
-                          <span key={tag} className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded-full">{tag}</span>
+                          <span key={tag} className="text-xs bg-portal-accent/10 text-portal-accent px-1.5 py-0.5 rounded-full">{tag}</span>
                         ))}
                         {(p.tags ?? []).length > 2 && (
                           <span className="text-xs text-gray-400 dark:text-zinc-500">+{p.tags.length - 2}</span>
@@ -243,7 +243,7 @@ export default function PoolsPage({ embedded = false }) {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => setModal({ mode: 'detail', pool: p })}
-                        className="text-xs text-orange-500 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors"
+                        className="text-xs text-portal-accent hover:text-portal-accent font-medium transition-colors"
                       >
                         {p.member_count}
                       </button>

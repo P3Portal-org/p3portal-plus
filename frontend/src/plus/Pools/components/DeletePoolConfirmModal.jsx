@@ -52,7 +52,7 @@ export default function DeletePoolConfirmModal({ pool, onSuccess, onClose }) {
           </p>
 
           {preview && (preview.member_count > 0 || preview.assignment_count > 0) && (
-            <div className="flex flex-col gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg px-3 py-2.5">
+            <div className="flex flex-col gap-1.5 text-xs text-portal-warn bg-portal-warn/10 border border-portal-warn/30 rounded-lg px-3 py-2.5">
               <div className="flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 shrink-0">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -66,14 +66,14 @@ export default function DeletePoolConfirmModal({ pool, onSuccess, onClose }) {
               {preview.assignment_count > 0 && (
                 <span className="ml-5">• {t('pools.delete_assignments_hint', { count: preview.assignment_count })}</span>
               )}
-              <p className="ml-5 text-amber-500 dark:text-amber-500 font-normal mt-0.5">
+              <p className="ml-5 text-portal-warn font-normal mt-0.5">
                 {t('pools.delete_vms_preserved')}
               </p>
             </div>
           )}
 
           {error && (
-            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-lg px-3 py-2">
+            <p className="text-sm text-portal-danger bg-portal-danger/10 border border-portal-danger/30 rounded-lg px-3 py-2">
               {error}
             </p>
           )}

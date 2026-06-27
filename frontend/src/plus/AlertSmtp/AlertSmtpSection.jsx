@@ -11,7 +11,7 @@ import { getSmtpConfig, updateSmtpConfig } from '../../api/alerts'
 import { formatApiError } from '../../api/errors'
 import PlusBadge from '../../components/common/PlusBadge'
 
-const inputCls = "w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500"
+const inputCls = "w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent"
 
 const EMPTY = {
   host: '',
@@ -96,19 +96,19 @@ export default function AlertSmtpSection() {
       ) : (
         <form onSubmit={handleSave} className="space-y-4">
           {error && (
-            <div className="border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-xs text-red-700 dark:text-red-400 rounded">
+            <div className="border border-portal-danger/30 bg-portal-danger/10 px-3 py-2 text-xs text-portal-danger rounded">
               {typeof error === 'string' ? error : JSON.stringify(error)}
             </div>
           )}
           {success && (
-            <div className="border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/40 px-3 py-2 text-xs text-green-700 dark:text-green-400 rounded">
+            <div className="border border-portal-success/30 bg-portal-success/10 px-3 py-2 text-xs text-portal-success rounded">
               SMTP-Konfiguration gespeichert.
             </div>
           )}
 
           {configured && (
-            <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
-              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-portal-success">
+              <span className="w-2 h-2 rounded-full bg-portal-success shrink-0" />
               SMTP ist konfiguriert
             </div>
           )}
@@ -143,7 +143,7 @@ export default function AlertSmtpSection() {
           </div>
 
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-zinc-300 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-orange-500 focus:ring-orange-500"
+            <input type="checkbox" className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-portal-accent focus:ring-portal-accent"
               checked={form.use_tls} onChange={e => set('use_tls', e.target.checked)} />
             TLS verwenden
           </label>

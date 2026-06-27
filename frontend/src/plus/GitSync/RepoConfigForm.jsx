@@ -13,7 +13,7 @@ import { formatApiError } from '../../api/errors'
 import AuthConfigPanel from './AuthConfigPanel'
 import WebhookConfigPanel from './WebhookConfigPanel'
 
-const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500'
+const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent'
 const labelCls = 'block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1'
 
 const INTERVALS = [
@@ -87,7 +87,7 @@ export default function RepoConfigForm({ repoType, config, onSaved, onCancel, on
             checked={form.enabled}
             onChange={e => set('enabled', e.target.checked)}
           />
-          <div className="w-9 h-5 bg-gray-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500" />
+          <div className="w-9 h-5 bg-gray-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-portal-accent" />
         </label>
         <span className="text-sm text-gray-700 dark:text-zinc-300">{t('git_sync.enabled_label')}</span>
       </div>
@@ -143,7 +143,7 @@ export default function RepoConfigForm({ repoType, config, onSaved, onCancel, on
                 value={method}
                 checked={form.auth_method === method}
                 onChange={() => set('auth_method', method)}
-                className="accent-orange-500"
+                className="accent-portal-accent"
               />
               {method === 'https' ? 'HTTPS (PAT)' : 'SSH (Ed25519)'}
             </label>
@@ -184,7 +184,7 @@ export default function RepoConfigForm({ repoType, config, onSaved, onCancel, on
         <WebhookConfigPanel repoType={repoType} hasToken={config.has_webhook_token} />
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-portal-danger">{error}</p>}
 
       {/* Footer-Buttons */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-zinc-800">
@@ -196,8 +196,8 @@ export default function RepoConfigForm({ repoType, config, onSaved, onCancel, on
               disabled={deleting}
               className={`text-xs px-2.5 py-1.5 rounded transition-colors ${
                 confirmDelete
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'border border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-zinc-500 hover:border-red-400 hover:text-red-500'
+                  ? 'bg-portal-danger hover:bg-portal-danger text-white'
+                  : 'border border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-zinc-500 hover:border-portal-danger/50 hover:text-portal-danger'
               }`}
             >
               {deleting ? '…' : confirmDelete ? t('git_sync.confirm_delete') : t('git_sync.btn_delete')}

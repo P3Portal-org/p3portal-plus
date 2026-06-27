@@ -12,15 +12,15 @@ import { useScheduledJobRuns } from '../../hooks/useScheduledJobs'
 import RunDetailsTable from '../AutoSnapshots/RunDetailsTable'
 
 const STATUS_COLOR = {
-  running: 'text-orange-600 dark:text-orange-400',
-  success: 'text-green-600 dark:text-green-400',
-  failed:  'text-red-600 dark:text-red-400',
+  running: 'text-portal-accent',
+  success: 'text-portal-success',
+  failed:  'text-portal-danger',
 }
 
 const STATUS_DOT = {
-  running: 'bg-orange-500 animate-pulse',
-  success: 'bg-green-500',
-  failed:  'bg-red-500',
+  running: 'bg-portal-accent animate-pulse',
+  success: 'bg-portal-success',
+  failed:  'bg-portal-danger',
 }
 
 function fmtDate(iso) {
@@ -103,8 +103,8 @@ export default function RunHistoryList({ jobId, jobType }) {
   if (error) {
     return (
       <div className="text-center py-4">
-        <p className="text-sm text-red-500">Fehler beim Laden der Run-History.</p>
-        <button onClick={reload} className="mt-2 text-xs text-orange-600 dark:text-orange-400 hover:underline">Erneut versuchen</button>
+        <p className="text-sm text-portal-danger">Fehler beim Laden der Run-History.</p>
+        <button onClick={reload} className="mt-2 text-xs text-portal-accent hover:underline">Erneut versuchen</button>
       </div>
     )
   }

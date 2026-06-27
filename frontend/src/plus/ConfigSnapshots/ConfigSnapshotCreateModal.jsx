@@ -73,14 +73,14 @@ export default function ConfigSnapshotCreateModal({ portalNodeId, proxmoxNode, v
               maxLength={80}
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full text-sm bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-2 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full text-sm bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-2 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
             />
           </div>
 
           {/* Note (Pflicht) */}
           <div>
             <label htmlFor="snap-note" className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-              {t('config_snapshots.field_note')} <span className="text-red-500">*</span>
+              {t('config_snapshots.field_note')} <span className="text-portal-danger">*</span>
             </label>
             <textarea
               id="snap-note"
@@ -89,15 +89,15 @@ export default function ConfigSnapshotCreateModal({ portalNodeId, proxmoxNode, v
               value={note}
               onChange={e => setNote(e.target.value)}
               placeholder={t('config_snapshots.note_placeholder')}
-              className="w-full text-sm bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-2 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              className="w-full text-sm bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-2 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent resize-none"
             />
             {!note.trim() && busy === false && (
-              <p className="mt-1 text-xs text-red-500">{t('config_snapshots.note_required')}</p>
+              <p className="mt-1 text-xs text-portal-danger">{t('config_snapshots.note_required')}</p>
             )}
             <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500 text-right">{note.length}/500</p>
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-portal-danger">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose} className="btn-secondary">{t('common.cancel')}</button>

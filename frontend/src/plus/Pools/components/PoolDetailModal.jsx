@@ -23,14 +23,14 @@ function QuotaBar({ label, used, quota }) {
     <div className="min-w-0">
       <div className="flex items-center justify-between text-xs mb-0.5">
         <span className="text-gray-500 dark:text-zinc-400">{label}</span>
-        <span className={over ? 'text-red-500 font-medium' : 'text-gray-700 dark:text-zinc-300'}>
+        <span className={over ? 'text-portal-danger font-medium' : 'text-gray-700 dark:text-zinc-300'}>
           {used} / {unlimited ? t('pools.unlimited') : quota}
         </span>
       </div>
       {!unlimited && (
         <div className="h-1.5 bg-gray-100 dark:bg-zinc-700 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${over ? 'bg-red-500' : pct > 80 ? 'bg-amber-500' : 'bg-orange-400'}`}
+            className={`h-full rounded-full transition-all ${over ? 'bg-portal-danger' : pct > 80 ? 'bg-portal-warn' : 'bg-portal-accent'}`}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -98,7 +98,7 @@ function MembersTab({ pool, nodes, reload }) {
     <div className="space-y-4">
       {/* Over-quota banner */}
       {usage?.is_over_quota && (
-        <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-xs text-portal-danger bg-portal-danger/10 border border-portal-danger/30 rounded-lg px-3 py-2">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 shrink-0">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
@@ -124,7 +124,7 @@ function MembersTab({ pool, nodes, reload }) {
             value={addNodeId}
             onChange={e => setAddNodeId(e.target.value)}
             required
-            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400 min-w-[140px]"
+            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent min-w-[140px]"
           >
             <option value="">{t('pools.add_member_node_placeholder')}</option>
             {(nodes ?? []).map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
@@ -139,7 +139,7 @@ function MembersTab({ pool, nodes, reload }) {
             onChange={e => setAddVmid(e.target.value)}
             required
             placeholder="100"
-            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400 w-24"
+            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent w-24"
           />
         </div>
         <div>
@@ -147,7 +147,7 @@ function MembersTab({ pool, nodes, reload }) {
           <select
             value={addType}
             onChange={e => setAddType(e.target.value)}
-            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
           >
             <option value="vm">VM</option>
             <option value="lxc">LXC</option>
@@ -161,7 +161,7 @@ function MembersTab({ pool, nodes, reload }) {
           {addBusy ? '…' : t('pools.add_member_btn')}
         </button>
       </form>
-      {addError && <p className="text-xs text-red-500">{addError}</p>}
+      {addError && <p className="text-xs text-portal-danger">{addError}</p>}
 
       {/* Search */}
       <input
@@ -169,7 +169,7 @@ function MembersTab({ pool, nodes, reload }) {
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder={t('pools.member_search_placeholder')}
-        className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+        className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
       />
 
       {/* Members list */}
@@ -179,11 +179,11 @@ function MembersTab({ pool, nodes, reload }) {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-zinc-800/50 text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                <th className="px-3 py-2 text-left">VM-ID</th>
-                <th className="px-3 py-2 text-left">{t('pools.col_node')}</th>
-                <th className="px-3 py-2 text-left">{t('pools.col_type')}</th>
-                <th className="px-3 py-2 text-left">{t('pools.col_added_by')}</th>
+              <tr className="border-b border-gray-200 dark:border-zinc-700">
+                <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">VM-ID</th>
+                <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_node')}</th>
+                <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_type')}</th>
+                <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_added_by')}</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>
@@ -201,7 +201,7 @@ function MembersTab({ pool, nodes, reload }) {
                   <td className="px-3 py-2 text-right">
                     <button
                       onClick={() => handleRemove(m)}
-                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                      className="text-xs text-portal-danger hover:text-portal-danger transition-colors"
                     >
                       {t('common.remove')}
                     </button>
@@ -280,7 +280,7 @@ function AssignmentsTab({ pool, users, groups, presets, reload }) {
           <select
             value={subjectType}
             onChange={e => { setSubjectType(e.target.value); setSubjectId('') }}
-            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
           >
             <option value="user">{t('pools.subject_type_user')}</option>
             <option value="group">{t('pools.subject_type_group')}</option>
@@ -294,7 +294,7 @@ function AssignmentsTab({ pool, users, groups, presets, reload }) {
             value={subjectId}
             onChange={e => setSubjectId(e.target.value)}
             required
-            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400 min-w-[140px]"
+            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent min-w-[140px]"
           >
             <option value="">{t('common.select')}…</option>
             {subjectOptions.map(s => (
@@ -308,7 +308,7 @@ function AssignmentsTab({ pool, users, groups, presets, reload }) {
             value={presetId}
             onChange={e => setPresetId(e.target.value)}
             required
-            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400 min-w-[140px]"
+            className="text-sm px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent min-w-[140px]"
           >
             <option value="">{t('common.select')}…</option>
             {(presets ?? []).map(p => (
@@ -324,7 +324,7 @@ function AssignmentsTab({ pool, users, groups, presets, reload }) {
           {addBusy ? '…' : t('pools.add_assignment_btn')}
         </button>
       </form>
-      {addError && <p className="text-xs text-red-500">{addError}</p>}
+      {addError && <p className="text-xs text-portal-danger">{addError}</p>}
 
       {/* Assignments list */}
       <div className="border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden">
@@ -333,10 +333,10 @@ function AssignmentsTab({ pool, users, groups, presets, reload }) {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-zinc-800/50 text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                <th className="px-3 py-2 text-left">{t('pools.col_subject')}</th>
-                <th className="px-3 py-2 text-left">{t('pools.col_preset')}</th>
-                <th className="px-3 py-2 text-left">{t('pools.col_added_by')}</th>
+              <tr className="border-b border-gray-200 dark:border-zinc-700">
+                <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_subject')}</th>
+                <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_preset')}</th>
+                <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-500">{t('pools.col_added_by')}</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>
@@ -358,7 +358,7 @@ function AssignmentsTab({ pool, users, groups, presets, reload }) {
                   <td className="px-3 py-2 text-right">
                     <button
                       onClick={() => handleRemove(a)}
-                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                      className="text-xs text-portal-danger hover:text-portal-danger transition-colors"
                     >
                       {t('common.remove')}
                     </button>
@@ -412,7 +412,7 @@ export default function PoolDetailModal({ poolId, users, groups, onClose }) {
 
   const tabCls = (t) => `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
     tab === t
-      ? 'border-orange-500 text-gray-900 dark:text-zinc-100'
+      ? 'border-portal-accent/50 text-gray-900 dark:text-zinc-100'
       : 'border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200'
   }`
 
@@ -455,7 +455,7 @@ export default function PoolDetailModal({ poolId, users, groups, onClose }) {
           {loading ? (
             <p className="text-sm text-gray-400 dark:text-zinc-500 py-8 text-center">{t('common.loading')}</p>
           ) : error ? (
-            <p className="text-sm text-red-400 py-8 text-center">{error}</p>
+            <p className="text-sm text-portal-danger py-8 text-center">{error}</p>
           ) : tab === 'members' ? (
             <MembersTab pool={pool} nodes={nodes} reload={load} />
           ) : (

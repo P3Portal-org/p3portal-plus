@@ -83,12 +83,12 @@ export default function ConfigSnapshotsNodeTab({ portalNodeId, active }) {
           placeholder={t('config_snapshots.filter_search')}
           value={q}
           onChange={e => setQ(e.target.value)}
-          className="text-xs bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-1.5 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-500 w-48"
+          className="text-xs bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-1.5 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent w-48"
         />
         <select
           value={kindFilter}
           onChange={e => setKindFilter(e.target.value)}
-          className="text-xs bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-2 py-1.5 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="text-xs bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-2 py-1.5 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
         >
           <option value="">{t('config_snapshots.filter_kind_all')}</option>
           <option value="qemu">VM (QEMU)</option>
@@ -99,7 +99,7 @@ export default function ConfigSnapshotsNodeTab({ portalNodeId, active }) {
           value={since}
           onChange={e => setSince(e.target.value)}
           title={t('config_snapshots.filter_since')}
-          className="text-xs bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-2 py-1.5 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="text-xs bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-2 py-1.5 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
         />
         <button type="button" className="btn-secondary text-xs" onClick={() => { setQ(''); setKindFilter(''); setSince('') }}>
           {t('common.reset')}
@@ -126,7 +126,7 @@ export default function ConfigSnapshotsNodeTab({ portalNodeId, active }) {
               {t('config_snapshots.btn_bulk_delete')}
             </button>
           )}
-          {bulkError && <span className="text-xs text-red-500 ml-2">{bulkError}</span>}
+          {bulkError && <span className="text-xs text-portal-danger ml-2">{bulkError}</span>}
         </div>
       )}
 
@@ -134,7 +134,7 @@ export default function ConfigSnapshotsNodeTab({ portalNodeId, active }) {
       {isLoading && <p className="text-sm text-gray-500 dark:text-zinc-400">{t('common.loading')}</p>}
       {error && (
         <div className="flex items-center gap-2">
-          <p className="text-sm text-red-500">{error?.response?.data?.detail ?? t('common.error_generic')}</p>
+          <p className="text-sm text-portal-danger">{error?.response?.data?.detail ?? t('common.error_generic')}</p>
           <button type="button" className="btn-secondary text-xs" onClick={() => refetch()}>{t('common.retry')}</button>
         </div>
       )}
@@ -162,7 +162,7 @@ export default function ConfigSnapshotsNodeTab({ portalNodeId, active }) {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
               {list.map(snap => (
-                <tr key={snap.id} className={`hover:bg-gray-50 dark:hover:bg-zinc-800/30 ${selected.has(snap.id) ? 'bg-orange-50 dark:bg-orange-900/10' : ''}`}>
+                <tr key={snap.id} className={`hover:bg-gray-50 dark:hover:bg-zinc-800/30 ${selected.has(snap.id) ? 'bg-portal-accent/10' : ''}`}>
                   <td className="px-3 py-2">
                     <input type="checkbox" checked={selected.has(snap.id)} onChange={() => toggleOne(snap.id)} />
                   </td>

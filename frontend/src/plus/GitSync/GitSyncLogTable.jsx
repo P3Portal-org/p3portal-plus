@@ -12,9 +12,9 @@ import { fetchSyncLogs } from './api'
 
 function StatusDot({ status }) {
   const map = {
-    success: 'bg-green-500',
-    failed: 'bg-red-500',
-    running: 'bg-blue-400 animate-pulse',
+    success: 'bg-portal-success',
+    failed: 'bg-portal-danger',
+    running: 'bg-portal-info animate-pulse',
   }
   return <span className={`inline-block w-2 h-2 rounded-full ${map[status] ?? 'bg-gray-400'}`} />
 }
@@ -73,7 +73,7 @@ export default function GitSyncLogTable({ repoType }) {
                 </td>
                 <td className="px-3 py-2.5 text-gray-500 dark:text-zinc-400">{log.triggered_by}</td>
                 <td className="px-3 py-2.5 text-right text-gray-700 dark:text-zinc-300">{log.items_synced}</td>
-                <td className={`px-3 py-2.5 text-right font-medium ${log.items_conflicted > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400 dark:text-zinc-500'}`}>
+                <td className={`px-3 py-2.5 text-right font-medium ${log.items_conflicted > 0 ? 'text-portal-warn' : 'text-gray-400 dark:text-zinc-500'}`}>
                   {log.items_conflicted}
                 </td>
               </tr>
@@ -81,7 +81,7 @@ export default function GitSyncLogTable({ repoType }) {
                 <tr key={`${log.id}-detail`} className="bg-gray-50 dark:bg-zinc-800/60">
                   <td colSpan={5} className="px-4 py-2">
                     {log.message && (
-                      <p className={`text-[11px] mb-1 ${log.status === 'failed' ? 'text-red-500' : 'text-gray-500 dark:text-zinc-400'}`}>
+                      <p className={`text-[11px] mb-1 ${log.status === 'failed' ? 'text-portal-danger' : 'text-gray-500 dark:text-zinc-400'}`}>
                         {log.message}
                       </p>
                     )}

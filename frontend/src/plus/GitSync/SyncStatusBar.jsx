@@ -19,9 +19,9 @@ function formatDateTime(isoStr) {
 function StatusBadge({ status }) {
   const { t } = useTranslation()
   const map = {
-    success: { cls: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400', label: t('git_sync.status_success') },
-    failed: { cls: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400', label: t('git_sync.status_failed') },
-    running: { cls: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400', label: t('git_sync.status_running') },
+    success: { cls: 'bg-portal-success/10 text-portal-success', label: t('git_sync.status_success') },
+    failed: { cls: 'bg-portal-danger/10 text-portal-danger', label: t('git_sync.status_failed') },
+    running: { cls: 'bg-portal-info/10 text-portal-info', label: t('git_sync.status_running') },
   }
   const { cls, label } = map[status] ?? { cls: 'bg-gray-100 dark:bg-zinc-800 text-gray-500', label: status }
   return (
@@ -87,13 +87,13 @@ export default function SyncStatusBar({ repoType, onSynced }) {
                 <span className="ml-2">{lastLog.items_synced} {t('git_sync.items_synced')}</span>
               )}
               {lastLog.items_conflicted > 0 && (
-                <span className="ml-2 text-yellow-600 dark:text-yellow-400">
+                <span className="ml-2 text-portal-warn">
                   {lastLog.items_conflicted} {t('git_sync.items_conflicted')}
                 </span>
               )}
             </div>
             {lastLog.status === 'failed' && lastLog.message && (
-              <p className="text-[11px] text-red-500 dark:text-red-400 truncate max-w-xs" title={lastLog.message}>
+              <p className="text-[11px] text-portal-danger truncate max-w-xs" title={lastLog.message}>
                 {lastLog.message}
               </p>
             )}
@@ -102,9 +102,9 @@ export default function SyncStatusBar({ repoType, onSynced }) {
           <span>{t('git_sync.no_sync_yet')}</span>
         )}
         {syncResult === 'queued' && (
-          <p className="text-[11px] text-blue-500">{t('git_sync.sync_queued')}</p>
+          <p className="text-[11px] text-portal-info">{t('git_sync.sync_queued')}</p>
         )}
-        {error && <p className="text-[11px] text-red-500">{error}</p>}
+        {error && <p className="text-[11px] text-portal-danger">{error}</p>}
       </div>
 
       {/* Jetzt-synchronisieren-Button */}

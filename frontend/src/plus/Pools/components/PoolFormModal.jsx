@@ -28,7 +28,7 @@ function QuotaField({ label, value, onChange, hint }) {
         min={0}
         value={value}
         onChange={e => onChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
-        className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+        className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
       />
       {hint && <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">{hint}</p>}
     </div>
@@ -152,7 +152,7 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
           {error && (
-            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-lg px-3 py-2">
+            <p className="text-sm text-portal-danger bg-portal-danger/10 border border-portal-danger/30 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
@@ -166,7 +166,7 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
               {/* Name */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-                  {t('pools.field_name')} <span className="text-red-400">*</span>
+                  {t('pools.field_name')} <span className="text-portal-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -176,7 +176,7 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
                   minLength={2}
                   maxLength={64}
                   placeholder={t('pools.field_name_placeholder')}
-                  className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
                 />
               </div>
 
@@ -190,7 +190,7 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
                   onChange={e => setDescription(e.target.value)}
                   rows={2}
                   placeholder={t('pools.field_description_placeholder')}
-                  className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                  className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent resize-none"
                 />
               </div>
 
@@ -205,9 +205,9 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
                   className="flex flex-wrap gap-1.5 min-h-[2.25rem] px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 cursor-text"
                 >
                   {tags.map((tag, idx) => (
-                    <span key={idx} className="flex items-center gap-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full">
+                    <span key={idx} className="flex items-center gap-1 text-xs bg-portal-accent/10 text-portal-accent px-2 py-0.5 rounded-full">
                       {tag}
-                      <button type="button" onClick={() => removeTag(idx)} className="text-orange-400 hover:text-orange-600 leading-none">×</button>
+                      <button type="button" onClick={() => removeTag(idx)} className="text-portal-accent hover:text-portal-accent leading-none">×</button>
                     </span>
                   ))}
                   <input
@@ -246,7 +246,7 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
                   <select
                     value={clearOwner ? '' : ownerType}
                     onChange={e => { setClearOwner(false); setOwnerType(e.target.value); setOwnerId('') }}
-                    className="text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400 w-36"
+                    className="text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent w-36"
                   >
                     <option value="">{t('pools.owner_type_none')}</option>
                     <option value="user">{t('pools.owner_type_user')}</option>
@@ -256,7 +256,7 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
                     <select
                       value={ownerId}
                       onChange={e => setOwnerId(e.target.value)}
-                      className="flex-1 text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      className="flex-1 text-sm px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent"
                     >
                       <option value="">{t('pools.field_owner_none')}</option>
                       {ownerOptions.map(o => (
@@ -271,7 +271,7 @@ export default function PoolFormModal({ pool, users, groups, onSuccess, onClose 
                       type="checkbox"
                       checked={clearOwner}
                       onChange={e => { setClearOwner(e.target.checked); if (e.target.checked) { setOwnerType(''); setOwnerId('') } }}
-                      className="rounded border-gray-300 dark:border-zinc-600 text-orange-500 focus:ring-orange-400"
+                      className="rounded border-gray-300 dark:border-zinc-600 text-portal-accent focus:ring-portal-accent"
                     />
                     <span className="text-xs text-gray-500 dark:text-zinc-400">{t('pools.field_owner_clear')}</span>
                   </label>

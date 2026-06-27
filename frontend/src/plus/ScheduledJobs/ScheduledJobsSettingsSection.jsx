@@ -113,7 +113,7 @@ export default function ScheduledJobsSettingsSection() {
           {!editingKey && (
             <button
               onClick={() => { setEditingKey(true); setKeyDraft(''); setKeyMsg('') }}
-              className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 transition-colors"
+              className="text-sm text-portal-accent hover:text-portal-accent transition-colors"
             >
               {hasKey ? 'Ändern' : 'Hinterlegen'}
             </button>
@@ -130,7 +130,7 @@ export default function ScheduledJobsSettingsSection() {
                 <button
                   onClick={handleDeleteKey}
                   disabled={deletingKey}
-                  className="text-sm text-red-500 hover:text-red-600 dark:text-red-400 disabled:opacity-50 transition-colors shrink-0"
+                  className="text-sm text-portal-danger hover:text-portal-danger disabled:opacity-50 transition-colors shrink-0"
                 >
                   {deletingKey ? 'Löscht…' : 'Entfernen'}
                 </button>
@@ -148,7 +148,7 @@ export default function ScheduledJobsSettingsSection() {
               value={keyDraft}
               onChange={e => setKeyDraft(e.target.value)}
               placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
-              className="w-full border px-3 py-2 text-xs font-mono bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-orange-500 rounded resize-y"
+              className="w-full border px-3 py-2 text-xs font-mono bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-portal-accent rounded resize-y"
             />
             <div className="flex gap-2">
               <button
@@ -168,8 +168,8 @@ export default function ScheduledJobsSettingsSection() {
           </div>
         )}
 
-        {keyErr && <p className="mt-2 text-xs text-red-500">{keyErr}</p>}
-        {keyMsg && <p className="mt-2 text-xs text-green-600 dark:text-green-400">{keyMsg}</p>}
+        {keyErr && <p className="mt-2 text-xs text-portal-danger">{keyErr}</p>}
+        {keyMsg && <p className="mt-2 text-xs text-portal-success">{keyMsg}</p>}
         <span className="rq hidden" aria-hidden="true" />
       </div>
 
@@ -188,7 +188,7 @@ export default function ScheduledJobsSettingsSection() {
             max={1000}
             value={limitDraft}
             onChange={e => setLimitDraft(e.target.value)}
-            className="w-32 text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="w-32 text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent"
           />
           <button
             onClick={handleSaveLimit}
@@ -198,8 +198,8 @@ export default function ScheduledJobsSettingsSection() {
             {savingLimit ? 'Speichert…' : 'Speichern'}
           </button>
         </div>
-        {limitErr && <p className="mt-2 text-xs text-red-500">{limitErr}</p>}
-        {limitMsg && <p className="mt-2 text-xs text-green-600 dark:text-green-400">{limitMsg}</p>}
+        {limitErr && <p className="mt-2 text-xs text-portal-danger">{limitErr}</p>}
+        {limitMsg && <p className="mt-2 text-xs text-portal-success">{limitMsg}</p>}
         <span className="rq hidden" aria-hidden="true" />
       </div>
 

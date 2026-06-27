@@ -69,7 +69,7 @@ export default function ConfigSnapshotUploadModal({ portalNodeId, proxmoxNode, v
           {/* File picker */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-              {t('config_snapshots.upload_file')} <span className="text-red-500">*</span>
+              {t('config_snapshots.upload_file')} <span className="text-portal-danger">*</span>
             </label>
             <div
               className="border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-md p-4 text-center cursor-pointer hover:border-[var(--accent)] transition-colors"
@@ -82,14 +82,14 @@ export default function ConfigSnapshotUploadModal({ portalNodeId, proxmoxNode, v
               )}
             </div>
             <input ref={fileInputRef} type="file" accept=".conf,.txt" className="hidden" onChange={handleFileChange} />
-            {validationError && <p className="mt-1 text-xs text-red-500">{validationError}</p>}
+            {validationError && <p className="mt-1 text-xs text-portal-danger">{validationError}</p>}
             <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{t('config_snapshots.upload_size_hint')}</p>
           </div>
 
           {/* Note */}
           <div>
             <label htmlFor="upload-note" className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-              {t('config_snapshots.field_note')} <span className="text-red-500">*</span>
+              {t('config_snapshots.field_note')} <span className="text-portal-danger">*</span>
             </label>
             <textarea
               id="upload-note"
@@ -98,7 +98,7 @@ export default function ConfigSnapshotUploadModal({ portalNodeId, proxmoxNode, v
               value={note}
               onChange={e => setNote(e.target.value)}
               placeholder={t('config_snapshots.note_placeholder')}
-              className="w-full text-sm bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-2 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              className="w-full text-sm bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-md px-3 py-2 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-portal-accent resize-none"
             />
             <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500 text-right">{note.length}/500</p>
           </div>
@@ -129,7 +129,7 @@ export default function ConfigSnapshotUploadModal({ portalNodeId, proxmoxNode, v
             </div>
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-portal-danger">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose} className="btn-secondary">{t('common.cancel')}</button>

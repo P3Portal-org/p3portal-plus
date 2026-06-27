@@ -18,8 +18,8 @@ const ACTIONS = [
   { value: 'resume',   label: 'Fortsetzen (Resume)' },
 ]
 
-const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500'
-const timeCls  = 'text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500'
+const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent'
+const timeCls  = 'text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent'
 
 function cronToTime(cron) {
   if (!cron) return ''
@@ -80,7 +80,7 @@ export default function PowerActionJobForm({
     <div className="space-y-4">
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          Node <span className="text-red-500">*</span>
+          Node <span className="text-portal-danger">*</span>
         </label>
         <select value={config.node ?? ''} onChange={e => handleNodeChange(e.target.value)} className={inputCls}>
           <option value="">– Node wählen –</option>
@@ -92,7 +92,7 @@ export default function PowerActionJobForm({
 
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          VM / LXC <span className="text-red-500">*</span>
+          VM / LXC <span className="text-portal-danger">*</span>
         </label>
         {loadingVms ? (
           <div className={`${inputCls} text-gray-400 dark:text-zinc-500`}>Lädt VMs…</div>
@@ -120,7 +120,7 @@ export default function PowerActionJobForm({
           id="window-mode-toggle"
           checked={windowMode}
           onChange={e => onWindowModeChange(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-orange-500 focus:ring-orange-500 focus:ring-offset-0"
+          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-portal-accent focus:ring-portal-accent focus:ring-offset-0"
         />
         <label htmlFor="window-mode-toggle" className="text-sm text-gray-700 dark:text-zinc-300">
           Betriebsfenster (VM automatisch starten &amp; stoppen)
@@ -128,15 +128,15 @@ export default function PowerActionJobForm({
       </div>
 
       {windowMode ? (
-        <div className="space-y-3 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/50 rounded-lg p-4">
-          <p className="text-xs font-medium text-orange-700 dark:text-orange-400">
+        <div className="space-y-3 bg-portal-accent/10 border border-portal-accent/30 rounded-lg p-4">
+          <p className="text-xs font-medium text-portal-accent">
             Die VM startet und stoppt täglich zu den angegebenen Zeiten.
           </p>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-                Startzeit <span className="text-red-500">*</span>
+                Startzeit <span className="text-portal-danger">*</span>
               </label>
               <input
                 type="time"
@@ -148,7 +148,7 @@ export default function PowerActionJobForm({
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-                Stoppzeit <span className="text-red-500">*</span>
+                Stoppzeit <span className="text-portal-danger">*</span>
               </label>
               <input
                 type="time"
@@ -163,7 +163,7 @@ export default function PowerActionJobForm({
       ) : (
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-            Aktion <span className="text-red-500">*</span>
+            Aktion <span className="text-portal-danger">*</span>
           </label>
           <select value={config.action ?? 'start'} onChange={e => set('action', e.target.value)} className={inputCls}>
             {ACTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}

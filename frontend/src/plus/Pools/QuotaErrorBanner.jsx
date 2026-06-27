@@ -32,7 +32,7 @@ function ExceededRow({ dim, current, requested, limit }) {
 
   return (
     <li className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0 text-xs">
-      <span className="font-medium text-red-700 dark:text-red-300 w-24 shrink-0">{meta.label}</span>
+      <span className="font-medium text-portal-danger w-24 shrink-0">{meta.label}</span>
       <span className="text-gray-600 dark:text-zinc-400">
         angefordert <strong><QuotaValue value={requested[dim]} unit={unit} /></strong>
         {' '}· verfügbar{' '}
@@ -63,17 +63,17 @@ export default function QuotaErrorBanner({ detail, poolName }) {
   return (
     <div
       role="alert"
-      className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-4 py-3 space-y-2"
+      className="rounded-lg border border-portal-danger/30 bg-portal-danger/10 px-4 py-3 space-y-2"
     >
       {/* Header */}
       <div className="flex items-start gap-2">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-          className="w-4 h-4 text-red-500 shrink-0 mt-px">
+          className="w-4 h-4 text-portal-danger shrink-0 mt-px">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-        <p className="text-sm font-medium text-red-700 dark:text-red-300">
+        <p className="text-sm font-medium text-portal-danger">
           {t('pools.quota_exceeded_title', { name })}
         </p>
       </div>

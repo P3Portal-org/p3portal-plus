@@ -73,8 +73,8 @@ export default function GitSyncRepoPanel({ repoType, onConflictsChange }) {
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900 rounded-lg p-4">
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      <div className="bg-white dark:bg-zinc-900 border border-portal-danger/30 rounded-lg p-4">
+        <p className="text-sm text-portal-danger">{error}</p>
         <button onClick={load} className="mt-2 btn-secondary text-xs">{t('common.retry')}</button>
       </div>
     )
@@ -87,7 +87,7 @@ export default function GitSyncRepoPanel({ repoType, onConflictsChange }) {
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{label}</span>
           {config?.enabled && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-portal-success/10 text-portal-success">
               {t('git_sync.status_enabled')}
             </span>
           )}

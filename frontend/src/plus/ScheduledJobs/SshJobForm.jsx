@@ -6,7 +6,7 @@
 // Contact: license@p3portal.org
 
 // p3portal.org
-const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder-gray-400 dark:placeholder-zinc-500'
+const inputCls = 'w-full text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-portal-accent placeholder-gray-400 dark:placeholder-zinc-500'
 
 export default function SshJobForm({ config, onChange }) {
 
@@ -16,7 +16,7 @@ export default function SshJobForm({ config, onChange }) {
     <div className="space-y-4">
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          Ziel <span className="text-red-500">*</span>
+          Ziel <span className="text-portal-danger">*</span>
         </label>
         <input
           type="text"
@@ -30,7 +30,7 @@ export default function SshJobForm({ config, onChange }) {
 
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          Befehl <span className="text-red-500">*</span>
+          Befehl <span className="text-portal-danger">*</span>
         </label>
         <input
           type="text"
@@ -43,7 +43,7 @@ export default function SshJobForm({ config, onChange }) {
 
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
-          SSH-Key-Quelle <span className="text-red-500">*</span>
+          SSH-Key-Quelle <span className="text-portal-danger">*</span>
         </label>
         <select
           value={config.ssh_key_source ?? 'system'}
@@ -54,7 +54,7 @@ export default function SshJobForm({ config, onChange }) {
           <option value="profile">Mein Profil-Key</option>
         </select>
         {config.ssh_key_source === 'profile' && (
-          <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+          <p className="mt-1 text-xs text-portal-warn">
             Dein Profil-SSH-Key wird für diesen Job verwendet. Stelle sicher, dass du einen hinterlegt hast.
           </p>
         )}
