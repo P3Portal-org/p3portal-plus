@@ -46,8 +46,14 @@ const PERF_THRESHOLD = 500
 function FitOnChange({ depKey }) {
   const { fitView } = useReactFlow()
   useEffect(() => {
-    const id = requestAnimationFrame(() => fitView({ padding: 0.2, duration: 200 }))
-    return () => cancelAnimationFrame(id)
+    // Doppel-rAF: warten bis ReactFlow die (frisch gemounteten/geänderten) Knoten
+    // gemessen hat. Ein einzelner rAF kann vor der Messung feuern → fitView zoomt
+    // in eine leere Fläche → es bleibt „nur das Raster" sichtbar.
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => fitView({ padding: 0.2, duration: 200 }))
+    })
+    return () => { cancelAnimationFrame(outer); cancelAnimationFrame(inner) }
   }, [depKey, fitView])
   return null
 }

@@ -24,6 +24,9 @@ export function useTopologyCluster({ enabled = true, poll = true } = {}) {
     refetchInterval: poll ? 60_000 : false,
     refetchIntervalInBackground: false,
     staleTime: 30_000,
+    // Während eines Hintergrund-Polls die vorherigen Daten behalten → die Knoten
+    // verschwinden nicht für einen Frame (sonst „nur noch das Raster").
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -39,6 +42,7 @@ export function useTopologyNetwork({ enabled = false } = {}) {
     refetchInterval: enabled ? 60_000 : false,
     refetchIntervalInBackground: false,
     staleTime: 30_000,
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -54,5 +58,6 @@ export function useTopologyDependencies({ enabled = false } = {}) {
     refetchInterval: enabled ? 60_000 : false,
     refetchIntervalInBackground: false,
     staleTime: 30_000,
+    placeholderData: (prev) => prev,
   })
 }
