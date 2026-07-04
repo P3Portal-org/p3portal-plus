@@ -402,14 +402,17 @@ def _lxc_resource_block(
 
 def stack_to_tfjson(
     spec: StackSpec,
-    template_vmids: dict[str, int],
+    template_vmids: dict[tuple[str, str] | str, int],
     cloudinit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Generate the full ``main.tf.json`` dict for a stack.
 
-    ``template_vmids`` maps each referenced template name → its resolved VMID
-    (looked up against the cluster at plan time). A missing template raises
-    ``KeyError`` so the caller can surface a clear plan error (Edge 2/5).
+    ``template_vmids`` maps each ``(target_node, template_name)`` → its resolved VMID
+    (looked up against the cluster at plan time, see ``resolve_template_vmids``). This
+    keys per node so a cluster with per-node template copies (same name, different
+    VMIDs) clones the copy on each VM's target node. A plain-string ``template_name``
+    key is accepted as a node-agnostic fallback (single-node / tests). A missing
+    template raises ``KeyError`` so the caller can surface a clear plan error (Edge 2/5).
 
     ``cloudinit`` (PROJ-85, Tech-Design C) maps each *resolved* (count-expanded)
     VM name → a ``cloud_init.CloudInitResolved``. Default ``None`` ⇒ byte-for-byte
@@ -445,10 +448,17 @@ def stack_to_tfjson(
                     net_depends=net_depends, vmid=lxc_vmid,
                 )
             continue
-        # VM: clone a template VMID (AC-2B-TRANS-2).
-        if r.template not in template_vmids:
+        # VM: clone the template VMID of the copy on THIS resource's target node
+        # (AC-2B-TRANS-2). Prod passes (node, template) keys so a cluster with
+        # per-node template copies (same name, different VMIDs) clones the right one;
+        # a plain-string key is a node-agnostic fallback (single-node / tests).
+        node_key = (r.node, r.template)
+        if node_key in template_vmids:
+            tmpl_vmid = template_vmids[node_key]
+        elif r.template in template_vmids:
+            tmpl_vmid = template_vmids[r.template]
+        else:
             raise KeyError(r.template)
-        tmpl_vmid = template_vmids[r.template]
         for idx, resolved_name in enumerate(_expanded_names(r)):
             # Tofu resource labels must be unique; resolved_name already is
             # (Phase-1 duplicate-name validation guarantees it).

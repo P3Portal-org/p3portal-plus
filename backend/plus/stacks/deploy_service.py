@@ -180,11 +180,18 @@ async def assert_deploy_allowed(
 
 # ── Template VMID resolution (Proxmox; mockable seam) ─────────────────────────
 
-async def resolve_template_vmids(node: NodeRow, spec) -> dict[str, int]:
-    """Resolve each referenced template name → its VMID on the node's cluster.
+async def resolve_template_vmids(node: NodeRow, spec) -> dict[tuple[str, str], int]:
+    """Resolve each referenced template → the VMID of the copy on the VM's TARGET node.
 
-    Read-only lookup via the node's viewer token. A missing template raises
-    HTTP 422 (Edge 2/5). Isolated so tests can mock it.
+    Keyed by ``(target_proxmox_node, template_name)``. In a cluster the same template
+    NAME can exist on several members with different (cluster-unique) VMIDs — e.g.
+    Packer builds one copy per node. A clone must use the copy that resides on the
+    VM's target node, otherwise Proxmox reports ``unable to find configuration file
+    for VM <id> on node <target>``. Keying by (node, name) stops same-name copies on
+    different nodes from overwriting each other.
+
+    Read-only lookup via the node's viewer token. A template missing on its target
+    node raises HTTP 422 (Edge 2/5). Isolated so tests can mock it.
     """
     from backend.services.proxmox import ProxmoxAuth, ProxmoxClient
 
@@ -199,20 +206,33 @@ async def resolve_template_vmids(node: NodeRow, spec) -> dict[str, int]:
     except Exception as exc:  # pragma: no cover – network
         raise HTTPException(status_code=502, detail="cluster_unreachable") from exc
 
-    by_name: dict[str, int] = {}
+    # (proxmox_node, template_name) → VMID for every template copy in the cluster.
+    by_node_name: dict[tuple[str, str], int] = {}
     for r in resources:
         if int(r.get("template", 0)) == 1:
             name = r.get("name")
-            if name:
-                by_name[str(name)] = int(r.get("vmid"))
+            rnode = r.get("node")
+            if name and rnode:
+                by_node_name[(str(rnode), str(name))] = int(r.get("vmid"))
 
     # PROJ-86: only VM resources clone a VM-template VMID. LXC templates are
     # ostemplate file-IDs (no VMID lookup) and must NOT be searched here.
-    wanted = {r.template for r in spec.resources if getattr(r, "type", "vm") == "vm"}
-    missing = sorted(wanted - set(by_name))
+    wanted: dict[tuple[str, str], int] = {}
+    missing: list[str] = []
+    for r in spec.resources:
+        if getattr(r, "type", "vm") != "vm":
+            continue
+        key = (r.node, r.template)
+        if key in by_node_name:
+            wanted[key] = by_node_name[key]
+        else:
+            missing.append(f"{r.template}@{r.node}")
     if missing:
-        raise HTTPException(status_code=422, detail=f"template_not_found:{','.join(missing)}")
-    return {t: by_name[t] for t in wanted}
+        raise HTTPException(
+            status_code=422,
+            detail=f"template_not_found:{','.join(sorted(set(missing)))}",
+        )
+    return wanted
 
 
 def _wanted_explicit_vmids(spec) -> dict[int, str]:

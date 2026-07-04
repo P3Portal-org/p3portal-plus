@@ -110,7 +110,13 @@ const MANUAL = '__manual__'
  */
 function ComboField({ value, onChange, options, placeholder, customLabel }) {
   const { t } = useTranslation()
-  const opts = Array.isArray(options) ? options : []
+  // Optionen dürfen Strings ODER { value, label } sein (Template zeigt ID+Node
+  // im Label, speichert aber weiter den Namen als Wert).
+  const opts = (Array.isArray(options) ? options : []).map((o) =>
+    o && typeof o === 'object'
+      ? { value: String(o.value), label: String(o.label ?? o.value) }
+      : { value: String(o), label: String(o) },
+  )
   // Start immer im Dropdown-Modus; ein nicht-gelisteter Wert (Default wie 'host'/
   // 'vmbr0' oder aus YAML geladen) wird als zusätzliche Option angezeigt, nicht
   // als Text-Modus erzwungen. „Eigener Wert…" wechselt bewusst in den Text-Modus.
@@ -148,7 +154,7 @@ function ComboField({ value, onChange, options, placeholder, customLabel }) {
     )
   }
 
-  const showCurrentValueOpt = value != null && value !== '' && !opts.includes(value)
+  const showCurrentValueOpt = value != null && value !== '' && !opts.some((o) => o.value === value)
   return (
     <select
       className={inputCls}
@@ -160,7 +166,7 @@ function ComboField({ value, onChange, options, placeholder, customLabel }) {
     >
       <option value="">{placeholder}</option>
       {showCurrentValueOpt && <option value={value}>{value}</option>}
-      {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+      {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       <option value={MANUAL}>{customLabel}</option>
     </select>
   )
@@ -310,17 +316,26 @@ function VmCard({ resource, index, total, onChange, onRemove, onMove, onDuplicat
   // Node-Namen (Strings)
   const nodeNames = [...new Set((nodeOptions || []).filter(Boolean))]
 
-  // Template-Namen, node-abhängig gefiltert (Fallback: alle, wenn der Node
-  // keine Treffer hat oder noch keiner gewählt ist).
+  // Template-Auswahl: NUR Vorlagen der gewählten Node (kein Fallback auf alle —
+  // sonst wählt man eine Kopie, die physisch auf einer anderen Node liegt → beim
+  // Deploy Proxmox-500 "unable to find configuration file for VM <id>"). Label zeigt
+  // Name (ID vmid · Node); gespeichert wird weiter der Name (portabler Stack).
+  // Manuelle Eingabe bleibt über ComboField möglich.
   const tplRows = Array.isArray(templateOptions) ? templateOptions : []
-  let tplNames = tplRows
-    .filter((tpl) => !r.node || tpl.node === r.node)
-    .map((tpl) => tpl.name || tpl.template)
-    .filter(Boolean)
-  if (tplNames.length === 0) {
-    tplNames = tplRows.map((tpl) => tpl.name || tpl.template).filter(Boolean)
+  const seenTpl = new Set()
+  const templateChoices = []
+  for (const tpl of tplRows) {
+    if (!r.node || tpl.node !== r.node) continue
+    const nm = String(tpl.name || tpl.template || '')
+    if (!nm || seenTpl.has(nm)) continue
+    seenTpl.add(nm)
+    templateChoices.push({
+      value: nm,
+      label: tpl.vmid != null ? `${nm} (ID ${tpl.vmid}${tpl.node ? ` · ${tpl.node}` : ''})` : nm,
+    })
   }
-  tplNames = [...new Set(tplNames.map(String))]
+  // Warnung: aktuell gewähltes Template liegt nicht auf der gewählten Node.
+  const templateMissingOnNode = !!r.node && !!r.template && !seenTpl.has(String(r.template))
 
   return (
     <div className="border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 p-4 space-y-3" draggable={false}>
@@ -351,10 +366,15 @@ function VmCard({ resource, index, total, onChange, onRemove, onMove, onDuplicat
           <ComboField
             value={r.template ?? ''}
             onChange={(v) => set('template', v)}
-            options={tplNames}
+            options={templateChoices}
             placeholder={t('stacks.form.select_ph')}
             customLabel={t('stacks.form.custom_value')}
           />
+          {templateMissingOnNode && (
+            <span className="text-[10px] text-portal-warn">
+              {t('stacks.form.template_not_on_node', { node: r.node })}
+            </span>
+          )}
         </Field>
 
         <Field label={t('stacks.form.field.count')}>

@@ -42,6 +42,29 @@ def test_transpile_count_one_keeps_name():
     assert set(vms) == {"web"}
 
 
+def test_transpile_per_node_template_vmid_cluster():
+    """Cluster: same template NAME on two members → each VM clones ITS node's copy.
+
+    Regression: name-only resolution kept one VMID that lived on another node → the
+    clone failed with 'unable to find configuration file for VM <id> on node <target>'.
+    """
+    spec = StackSpec(name="clusterstack", resources=[
+        VMResource(name="a", node="nested-pve1", template="deb12"),
+        VMResource(name="b", node="nested-pve2", template="deb12"),
+    ])
+    tvm = {("nested-pve1", "deb12"): 1003, ("nested-pve2", "deb12"): 2007}
+    vms = stack_to_tfjson(spec, tvm)["resource"]["proxmox_virtual_environment_vm"]
+    assert vms["a"]["clone"]["vm_id"] == 1003
+    assert vms["b"]["clone"]["vm_id"] == 2007
+
+
+def test_transpile_string_key_fallback_single_node():
+    """A plain-string template key stays node-agnostic (single-node / legacy)."""
+    vms = stack_to_tfjson(_spec(name="web"), {"deb12": 9000})[
+        "resource"]["proxmox_virtual_environment_vm"]
+    assert vms["web"]["clone"]["vm_id"] == 9000
+
+
 def test_transpile_no_vm_id_in_block():
     spec = _spec()
     block = stack_to_tfjson(spec, {"deb12": 9000})["resource"]["proxmox_virtual_environment_vm"]["web"]

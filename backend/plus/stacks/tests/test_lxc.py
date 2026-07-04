@@ -338,11 +338,48 @@ async def test_resolve_template_vmids_filters_vm_only():
         _lxc(name="proxy"),
     ])
     client = type("C", (), {"get_cluster_resources_v2": AsyncMock(
-        return_value=[{"vmid": 9000, "name": "deb12", "template": 1}])})()
+        return_value=[{"vmid": 9000, "name": "deb12", "template": 1, "node": "pve"}])})()
     from backend.plus.stacks.tests.test_deploy_service import _node
     with patch("backend.services.proxmox.ProxmoxClient", return_value=client):
         out = await ds.resolve_template_vmids(_node(), spec)
-    assert out == {"deb12": 9000}             # only the VM template, no ostemplate
+    assert out == {("pve", "deb12"): 9000}    # only the VM template, no ostemplate
+
+
+@pytest.mark.asyncio
+async def test_resolve_template_vmids_per_node_cluster():
+    """Cluster: same template NAME on two members → each VM resolves to ITS node's
+    copy VMID (regression for the cross-node clone 500)."""
+    spec = StackSpec(name="clusterstack", resources=[
+        VMResource(name="a", node="nested-pve1", template="deb12"),
+        VMResource(name="b", node="nested-pve2", template="deb12"),
+    ])
+    client = type("C", (), {"get_cluster_resources_v2": AsyncMock(return_value=[
+        {"vmid": 1003, "name": "deb12", "template": 1, "node": "nested-pve1"},
+        {"vmid": 2007, "name": "deb12", "template": 1, "node": "nested-pve2"},
+    ])})()
+    from backend.plus.stacks.tests.test_deploy_service import _node
+    with patch("backend.services.proxmox.ProxmoxClient", return_value=client):
+        out = await ds.resolve_template_vmids(_node(), spec)
+    assert out == {("nested-pve1", "deb12"): 1003, ("nested-pve2", "deb12"): 2007}
+
+
+@pytest.mark.asyncio
+async def test_resolve_template_vmids_missing_on_target_node():
+    """Template exists in the cluster but NOT on the VM's target node → 422 with the
+    template@node that is missing."""
+    from fastapi import HTTPException
+    spec = StackSpec(name="missstack", resources=[
+        VMResource(name="a", node="nested-pve2", template="deb12"),
+    ])
+    client = type("C", (), {"get_cluster_resources_v2": AsyncMock(return_value=[
+        {"vmid": 1003, "name": "deb12", "template": 1, "node": "nested-pve1"},
+    ])})()
+    from backend.plus.stacks.tests.test_deploy_service import _node
+    with patch("backend.services.proxmox.ProxmoxClient", return_value=client):
+        with pytest.raises(HTTPException) as ei:
+            await ds.resolve_template_vmids(_node(), spec)
+    assert ei.value.status_code == 422
+    assert "deb12@nested-pve2" in ei.value.detail
 
 
 def test_spec_disks_by_resource_lxc_rootfs_and_mounts():
