@@ -225,6 +225,14 @@ async def run_stack_job(
                 error_text = f"tofu apply exited with code {rc}"
         else:  # destroy
             if rc == 0:
+                # PROJ-42 Phase 2: IP-Allocations der zerstörten Stack-VMs freigeben,
+                # BEVOR clear_deployed_resources die VMID/Node-Zuordnung entfernt.
+                try:
+                    from backend.plus.ipam import stack_hook as _ipam_stack
+                    await _ipam_stack.release_stack_on_destroy(stack_id, triggered_by)
+                except Exception as exc:  # pragma: no cover – best-effort
+                    logger.warning("PROJ-42: stack destroy IP release failed (stack %s): %s",
+                                   stack_id, exc)
                 await clear_deployed_resources(stack_id)
                 job_status, deploy_status = "success", "success"
                 # PROJ-89: removal commit (AC-LC-1) — the applier left the SDN
@@ -271,6 +279,15 @@ async def run_stack_job(
                 await set_drift_state(stack_id, "in_sync")
             except Exception:
                 pass
+        # PROJ-42 Phase 2: reservierte Stack-IPs bestätigen (deployte → confirmed,
+        # nicht-deployte pending → freigeben). Nur bei apply; deploy_status steht fest.
+        # Best-effort (ein IPAM-Fehler darf das finally nie sprengen).
+        if operation == "apply":
+            try:
+                from backend.plus.ipam import stack_hook as _ipam_stack
+                await _ipam_stack.confirm_stack_ips(deployment_id)
+            except Exception as exc:  # pragma: no cover – best-effort
+                logger.warning("PROJ-42: stack IP confirm failed (stack %s): %s", stack_id, exc)
         await finish_deployment(deployment_id, deploy_status, error_text)
         await _set_job(job_id, status=job_status, finished_at=_now())
         # Release reverse to the acquire order (per-stack first, SDN last).

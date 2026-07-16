@@ -15,6 +15,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { getSshJobKeyStatus } from '../../api/profile'
 import { formatApiError } from '../../api/errors'
+import { useCapability } from '../../hooks/useCapability'
+import { availablePools, suggestFreeIp } from '../../api/ipam'
 import { useStackCloudInit, usePutStackCloudInit } from './hooks'
 
 const inputCls =
@@ -65,6 +67,63 @@ function ciError(err, fallback) {
   const d = err?.response?.data?.detail
   if (d && Array.isArray(d.errors)) return d.errors.join('; ')
   return formatApiError(err, fallback)
+}
+
+// ── Free-IP-Vorschlag (PROJ-42 Phase 2, Plus) ────────────────────────────────
+// Entkoppelt vom NIC-Netz (pragmatisch, konsistent mit dem Playbook-Deploy-Feld):
+// Pool wählen → „Freie IP vorschlagen" füllt CIDR + Gateway. Gated ipam_plus.
+function FreeIpPicker({ onFill }) {
+  const { t } = useTranslation()
+  const hasIpamPlus = useCapability('ipam_plus')
+  const poolsQuery = useQuery({
+    queryKey: ['ipam', 'available-pools'],
+    queryFn: availablePools,
+    enabled: hasIpamPlus,
+    staleTime: 30_000,
+  })
+  const [poolId, setPoolId] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState('')
+
+  const pools = poolsQuery.data || []
+  if (!hasIpamPlus || pools.length === 0) return null
+
+  const suggest = async () => {
+    setNote('')
+    const pool = pools.find((p) => p.id === Number(poolId))
+    if (!pool) return
+    setBusy(true)
+    try {
+      const res = await suggestFreeIp(pool.id)
+      if (!res?.ip) { setNote(t('ipam.deploy.exhausted')); return }
+      const prefix = (pool.cidr || '').split('/')[1] || '24'
+      onFill({ ip_address_cidr: `${res.ip}/${prefix}`, ip_gateway: pool.gateway || '' })
+    } catch {
+      setNote(t('ipam.deploy.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="md:col-span-2 flex flex-wrap items-center gap-2 rounded-md border border-portal-accent/30 bg-portal-accent/5 p-2">
+      <span className="text-[11px] text-portal-text2">{t('ipam.deploy.pool_label')}</span>
+      <select
+        value={poolId}
+        onChange={(e) => setPoolId(e.target.value)}
+        className="h-7 rounded-md border border-portal-border bg-portal-bg2 px-2 text-xs text-portal-text min-w-[12rem]"
+      >
+        <option value="">{t('ipam.deploy.pool_select')}</option>
+        {pools.map((p) => (
+          <option key={p.id} value={p.id}>{p.network_name} · {p.cidr}</option>
+        ))}
+      </select>
+      <button type="button" onClick={suggest} disabled={!poolId || busy} className="btn-table">
+        {busy ? '…' : t('ipam.deploy.suggest_btn')}
+      </button>
+      {note && <span className="text-[11px] text-portal-warn">{note}</span>}
+    </div>
+  )
 }
 
 // ── Shared field group (Default + Override) ──────────────────────────────────
@@ -163,6 +222,7 @@ function CloudInitBlockFields({ block, onPatch, profileKey, idPrefix, isLxc = fa
 
       {block.ip_mode === 'static' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <FreeIpPicker onFill={(patch) => onPatch(patch)} />
           <label className="flex flex-col gap-1 text-xs [&_input]:border-portal-accent">
             <span className="text-portal-text2 font-medium">{t('stacks.cloudinit.ip_cidr')} <span className="text-portal-accent font-semibold">*</span></span>
             <input

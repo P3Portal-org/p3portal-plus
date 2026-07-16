@@ -160,6 +160,22 @@ export const PlusComponents = {
   //   TopologyTab (Plus→Plus) und braucht keinen eigenen Registry-Eintrag.
   VmDependencySection: lazy(() => import('./Dependencies/VmDependencySection')),
   OrphanDependenciesTab: lazy(() => import('./Dependencies/OrphanDependenciesTab')),
+
+  // PROJ-101: Template-Replikation über Nodes (Plus-only).
+  // ReplicateTemplateModal: capability-gated Zeilen-Aktion im ProxmoxTemplatesTab
+  //   der Image Factory (useCapability('template_replication') + Admin ODER
+  //   Permission 'replicate_templates'). Preflight → Modal → Job → Live-Log.
+  ReplicateTemplateModal: lazy(() => import('./TemplateReplication/ReplicateTemplateModal')),
+
+  // PROJ-42 Phase 2: internes Plus-IPAM (zustandsbehaftete Ebene, gated
+  // useCapability('ipam_plus')). IpamAllocationsTab/IpamNetworkGrantsTab/
+  // IpamSettingsSection = Sub-Tabs der IPAM-Area (Core-Wrapper IpamPanel);
+  // IpamAllocationCard = read-only Karte auf der VM/LXC-Detailseite. OrphansSection
+  // wird Plus→Plus direkt aus AllocationsTab importiert → kein Registry-Eintrag.
+  IpamAllocationsTab: lazy(() => import('./Ipam/AllocationsTab')),
+  IpamNetworkGrantsTab: lazy(() => import('./Ipam/NetworkGrantsTab')),
+  IpamSettingsSection: lazy(() => import('./Ipam/IpamSettingsSection')),
+  IpamAllocationCard: lazy(() => import('./Ipam/IpamAllocationCard')),
 }
 
 // PROJ-68: Conflict-Badge Hook – non-lazy export (Hook, keine Komponente).

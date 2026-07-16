@@ -1011,6 +1011,13 @@ async def start_stack_job(
                 triggered_by_user_id=triggered_by_user_id,
             )
 
+            # PROJ-42 Phase 2: reserviere die statischen Stack-IPs als pending, BEVOR
+            # der tofu apply läuft (fail-fast bei IP-Kollision → 409). Nur bei apply
+            # und nur bei aktivem IPAM (der Hook prüft global_enabled selbst).
+            if operation == "apply":
+                from backend.plus.ipam import stack_hook as _ipam_stack
+                await _ipam_stack.reserve_stack_ips(stack_id, deployment_id, spec, username)
+
             import asyncio
             asyncio.create_task(
                 run_stack_job(

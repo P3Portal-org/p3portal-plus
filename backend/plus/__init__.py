@@ -138,6 +138,12 @@ try:
 except ImportError:
     logger.warning("dependencies_plus nicht verfügbar – Core-Defaults aktiv")
 
+try:
+    from backend.plus.ipam_plus import IpamPlusBehavior
+    _mixins.append(IpamPlusBehavior)
+except ImportError:
+    logger.warning("ipam_plus nicht verfügbar – Core-Defaults aktiv")
+
 
 # ── Plus-Capability-Gate-Hooks ohne dediziertes Mixin ───────────────────────
 
@@ -180,6 +186,10 @@ class _PlusGateBehavior:
     def can_use_groups_unlimited(self) -> bool:
         return True
 
+    def can_use_template_replication(self) -> bool:
+        # PROJ-101: Template-Replikation über Nodes ist Plus-only.
+        return True
+
     def get_extra_portal_permissions(self) -> list[str]:
         return [
             "manage_pools",
@@ -189,6 +199,8 @@ class _PlusGateBehavior:
             "manage_orphan_stacks",
             "manage_ansible_inventory",
             "manage_dependencies",
+            "replicate_templates",  # PROJ-101
+            "manage_ipam",  # PROJ-42 Phase 2
         ]
 
     def can_use_node_assignments(self) -> bool:
@@ -390,6 +402,15 @@ class _PlusGateBehavior:
             logger.debug("PROJ-96: vm_dependencies-Tabelle sichergestellt")
         except Exception as _e:
             logger.warning("PROJ-96: dependencies create_all fehlgeschlagen: %s", _e)
+
+        # PROJ-42 Phase 2: IPAM-Plus-Tabellen (ip_allocations/network_grants/ipam_config,
+        # eigene plus_metadata, Phantom ip_pools → FK auf Core-Tabelle)
+        try:
+            from backend.plus.ipam.models import plus_metadata as _ipam_meta
+            _ipam_meta.create_all(_engine, checkfirst=True)
+            logger.debug("PROJ-42: IPAM-Plus-Tabellen sichergestellt")
+        except Exception as _e:
+            logger.warning("PROJ-42: ipam create_all fehlgeschlagen: %s", _e)
 
 
 # ── PlusActiveBehavior: dynamisch aus verfügbaren Mixins komponiert ─────────

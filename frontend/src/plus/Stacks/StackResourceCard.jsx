@@ -11,9 +11,35 @@
 // PROJ-86: + LXC-Container-Karte (discriminated union über `type`). Reine VM-
 //   Karten bleiben unverändert; ein Dispatcher wählt VM- oder LXC-Body.
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useCapability } from '../../hooks/useCapability'
+import { availablePools } from '../../api/ipam'
 import { useNodeVmOptions, useImageStorages, useLxcTemplates } from './hooks'
 import StackGuestFirewall from './StackGuestFirewall'
+
+// PROJ-42 Phase 2: Auffindbarkeits-Hinweis am Bridge-Feld. Die statische IP wird
+// in Stacks über Cloud-Init gesetzt (L3), nicht an der NIC (L2) — der Free-IP-
+// Picker liegt daher fachlich richtig im Cloud-Init-Tab. Hat die gewählte Bridge
+// einen IPAM-Pool, weist dieser Hinweis dort hin. Nur Plus (ipam_plus).
+function BridgeIpamHint({ bridge }) {
+  const { t } = useTranslation()
+  const hasIpamPlus = useCapability('ipam_plus')
+  const { data: pools } = useQuery({
+    queryKey: ['ipam', 'available-pools'],
+    queryFn: availablePools,
+    enabled: hasIpamPlus,
+    staleTime: 30_000,
+  })
+  if (!hasIpamPlus || !bridge) return null
+  const hasPool = (pools || []).some((p) => p.network_name === bridge)
+  if (!hasPool) return null
+  return (
+    <span className="block text-[10px] text-portal-text3 leading-snug">
+      {t('ipam.stacks_bridge_hint')}
+    </span>
+  )
+}
 
 // PROJ-82: Bus-Grenzen (max Interface-Index, Muster Backend _BUS_MAX_INDEX). Der
 // Root klont immer auf scsi0 → eine zusätzliche scsi-Disk beginnt bei scsi1.
@@ -434,6 +460,7 @@ function VmCard({ resource, index, total, onChange, onRemove, onMove, onDuplicat
             placeholder="vmbr0"
             customLabel={t('stacks.form.custom_value')}
           />
+          <BridgeIpamHint bridge={r.network?.bridge} />
         </Field>
         <Field label={t('stacks.form.field.vlan_tag')}>
           <input type="number" min={1} max={4094} className={inputCls} value={r.network?.tag ?? ''} onChange={(e) => setNet('tag', e.target.value === '' ? undefined : Number(e.target.value))} />
@@ -724,6 +751,7 @@ function LxcCard({ resource, index, total, onChange, onRemove, onMove, onDuplica
             placeholder="vmbr0"
             customLabel={t('stacks.form.custom_value')}
           />
+          <BridgeIpamHint bridge={r.network?.bridge} />
         </Field>
         <Field label={t('stacks.form.field.vlan_tag')}>
           <input type="number" min={1} max={4094} className={inputCls} value={r.network?.tag ?? ''} onChange={(e) => setNet('tag', e.target.value === '' ? undefined : Number(e.target.value))} />

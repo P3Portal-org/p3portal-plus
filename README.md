@@ -51,6 +51,13 @@ Plus adds to Core (non-exhaustive list):
   packer builds, template deletions, owner-change requests
 - **Multi-node / multi-cluster dashboard** — independent Proxmox
   installations side by side
+- **IPAM** — persistent IP allocations with a reservation lifecycle
+  (pending → confirmed, auto-release on failure, orphan handling),
+  network grants per user/group with strict-visibility toggle, and
+  free-IP assignment for Stacks
+- **Template replication across nodes** — replicate a locally-built VM
+  template to other nodes, storage-aware (local copy via
+  clone/migrate/convert vs. lifting once onto a shared datastore)
 - **Playbook permission whitelists** — per user or group control over
   which playbooks may be executed
 - **Alert presets, SMTP delivery, webhook delivery** — beyond Core's

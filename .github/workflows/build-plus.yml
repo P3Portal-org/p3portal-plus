@@ -48,8 +48,20 @@ jobs:
 
       - name: Clone Core at pinned tag
         run: |
-          git clone --depth 1 --branch "${{ steps.core_version.outputs.version }}" \
-            "https://github.com/${{ env.CORE_REPO }}.git" core
+          TAG="${{ steps.core_version.outputs.version }}"
+          # Ein Job, eine Schleife: auf den Core-Tag warten (Race Core-Tag vs. Plus-Push
+          # bei einem Release). Harter Timeout: 10 Versuche x 20s ~= 3 min, dann Abbruch.
+          # Kein neuer Workflow/Dispatch. Ist der Tag schon da, greift break sofort → kein Delay.
+          for attempt in $(seq 1 10); do
+            if git clone --depth 1 --branch "$TAG" \
+                 "https://github.com/${{ env.CORE_REPO }}.git" core; then
+              break
+            fi
+            echo "Core-Tag $TAG noch nicht da (Versuch $attempt/10) - warte 20s..."
+            rm -rf core
+            sleep 20
+          done
+          [ -d core ] || { echo "::error::Core-Tag $TAG kam nach 10 Versuchen nicht"; exit 1; }
           ACTUAL_TAG=$(cd core && git describe --tags --exact-match HEAD 2>/dev/null || echo "no-tag")
           echo "Core cloned at tag: ${ACTUAL_TAG}"
 
